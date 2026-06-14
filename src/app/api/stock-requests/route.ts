@@ -6,7 +6,7 @@
 import { NextRequest } from 'next/server'
 import { ApiSecurity, withAuth } from '@/lib/api-security'
 import { BusinessSchemas, validateData } from '@/lib/data-validation'
-import { db } from '@/lib/auth'
+import { db } from '@/lib/db'
 
 export const GET = withAuth(
   async (req, user) => {

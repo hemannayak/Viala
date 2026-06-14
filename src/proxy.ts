@@ -5,7 +5,7 @@ export const config = {
   matcher: ['/admin/:path*', '/dashboard/:path*'],
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // In development, avoid middleware auth checks to prevent redirect loops.
   if (process.env.NODE_ENV !== 'production') {
     return NextResponse.next()

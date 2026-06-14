@@ -391,36 +391,8 @@ class MockQueryBuilder {
   }
 
   private async execute() {
-    const { dbFS } = await import('./firebase');
-    const { collection, getDocs, doc, setDoc, deleteDoc } = await import('firebase/firestore');
-
-    let table: any[] = [];
-    try {
-      const colRef = collection(dbFS, this.tableName);
-      const querySnapshot = await getDocs(colRef);
-      table = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-      if (table.length === 0) {
-        if (this.tableName === 'inventory') {
-          for (const item of DEFAULT_INVENTORY) {
-            await setDoc(doc(dbFS, 'inventory', item.id), item);
-          }
-          table = [...DEFAULT_INVENTORY];
-        } else if (this.tableName === 'patients') {
-          for (const item of DEFAULT_PATIENTS) {
-            await setDoc(doc(dbFS, 'patients', item.id), item);
-          }
-          table = [...DEFAULT_PATIENTS];
-        } else if (this.tableName === 'user_profiles') {
-          for (const item of DEFAULT_USER_PROFILES) {
-            await setDoc(doc(dbFS, 'user_profiles', item.id), item);
-          }
-          table = [...DEFAULT_USER_PROFILES];
-        }
-      }
-    } catch (err) {
-      console.error(`Error loading Firestore collection ${this.tableName}:`, err);
-    }
+    const dbData = getDb();
+    let table: any[] = (dbData as any)[this.tableName] || [];
 
     if (this.operation === 'select') {
       let filtered = [...table];
@@ -457,19 +429,21 @@ class MockQueryBuilder {
     if (this.operation === 'insert') {
       const dataToInsert = Array.isArray(this.insertData) ? this.insertData : [this.insertData];
       const inserted = [];
-      
+
       for (const item of dataToInsert) {
         const docId = item.id || `doc-${Math.random().toString(36).substr(2, 9)}`;
-        const docRef = doc(dbFS, this.tableName, docId);
         const newRecord = {
           id: docId,
           created_at: new Date().toISOString(),
-          ...item
+          ...item,
         };
-        await setDoc(docRef, newRecord);
+        table.push(newRecord);
         inserted.push(newRecord);
         triggerRealtimeEvent(this.tableName, 'INSERT', newRecord);
       }
+
+      (dbData as any)[this.tableName] = table;
+      saveDb(dbData);
 
       if (this.isSingle || !Array.isArray(this.insertData)) {
         return { data: inserted[0], error: null };
@@ -482,18 +456,18 @@ class MockQueryBuilder {
       for (const filter of this.filters) {
         filtered = filtered.filter(filter);
       }
-      
+
       const updatedItems: any[] = [];
       for (const item of filtered) {
-        const docRef = doc(dbFS, this.tableName, item.id);
-        const updatedFields = { ...this.updateData };
-        const oldItem = { ...item };
-        const newItem = { ...item, ...updatedFields };
-        
-        await setDoc(docRef, newItem, { merge: true });
+        const idx = table.findIndex((r) => r.id === item.id);
+        const newItem = { ...item, ...this.updateData };
+        if (idx !== -1) table[idx] = newItem;
         updatedItems.push(newItem);
-        triggerRealtimeEvent(this.tableName, 'UPDATE', newItem, oldItem);
+        triggerRealtimeEvent(this.tableName, 'UPDATE', newItem, item);
       }
+
+      (dbData as any)[this.tableName] = table;
+      saveDb(dbData);
 
       if (this.isSingle) {
         return { data: updatedItems[0] || null, error: null };
@@ -506,21 +480,22 @@ class MockQueryBuilder {
       for (const filter of this.filters) {
         filtered = filtered.filter(filter);
       }
-      
-      const deletedItems: any[] = [];
+
+      const filteredIds = new Set(filtered.map((r) => r.id));
+      (dbData as any)[this.tableName] = table.filter((r) => !filteredIds.has(r.id));
+      saveDb(dbData);
+
       for (const item of filtered) {
-        const docRef = doc(dbFS, this.tableName, item.id);
-        await deleteDoc(docRef);
-        deletedItems.push(item);
         triggerRealtimeEvent(this.tableName, 'DELETE', null, item);
       }
 
-      return { data: deletedItems, error: null };
+      return { data: filtered, error: null };
     }
 
     return { data: null, error: new Error('Unsupported operation') };
   }
 }
+
 
 class MockChannel {
   private channelName: string;

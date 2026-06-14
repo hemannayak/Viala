@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { ApiSecurity, withAuth } from '@/lib/api-security'
-import { db } from '@/lib/auth'
+import { db } from '@/lib/db'
 
 type HorizonDays = 15 | 30
 

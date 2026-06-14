@@ -1,10 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   reactCompiler: true,
-  
-  // Security headers to prevent CSP warnings
+
   async headers() {
     return [
       {
@@ -14,19 +12,19 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob:",
-              "font-src 'self' data:",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://apis.google.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "img-src 'self' data: blob: https://lh3.googleusercontent.com",
+              "font-src 'self' data: https://fonts.gstatic.com",
               "media-src 'self' data: blob:",
-              "connect-src 'self' https://api.openai.com",
+              "connect-src 'self' https://generativelanguage.googleapis.com https://api.openai.com",
               "worker-src 'self' blob:",
               "frame-src 'self'",
             ].join('; ')
           },
           {
             key: 'X-Frame-Options',
-            value: 'DENY'
+            value: 'SAMEORIGIN'
           },
           {
             key: 'X-Content-Type-Options',

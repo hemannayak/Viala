@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { db } from '@/lib/db'
+import { useAuth } from '@/components/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,6 +14,7 @@ export function AuthForm({ type }: { type: 'signin' | 'signup' }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const { signIn } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -22,25 +23,18 @@ export function AuthForm({ type }: { type: 'signin' | 'signup' }) {
 
     try {
       if (type === 'signin') {
-        const { error } = await db.auth.signInWithPassword({
-          email,
-          password,
-        })
-        if (error) throw error
-        router.push('/dashboard')
+        const result = await signIn(email, password)
+        if (result.error) {
+          setError(result.error)
+        } else {
+          router.push('/dashboard')
+        }
       } else {
-        const { error } = await db.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-          },
-        })
-        if (error) throw error
-        alert('Check your email for the confirmation link!')
+        // Sign-up: backend integration coming later
+        setError('Account creation will be available after backend integration. Use admin@viala.com / admin123 to sign in.')
       }
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setLoading(false)
     }
@@ -57,17 +51,12 @@ export function AuthForm({ type }: { type: 'signin' | 'signup' }) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            placeholder="you@example.com"
+            placeholder="admin@viala.com"
           />
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
-            {type === 'signin' && (
-              <a href="/forgot-password" className="text-sm text-primary hover:underline">
-                Forgot password?
-              </a>
-            )}
           </div>
           <Input
             id="password"
@@ -93,7 +82,7 @@ export function AuthForm({ type }: { type: 'signin' | 'signup' }) {
       <p className="mt-4 text-center text-sm text-muted-foreground">
         {type === 'signin' ? (
           <>
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <a href="/signup" className="text-primary hover:underline">
               Sign up
             </a>
