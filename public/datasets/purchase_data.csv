@@ -1,0 +1,19 @@
+purchase_date,medicine_name,quantity_purchased,unit_cost,total_cost,supplier,batch_no
+2024-11-15,Paracetamol 500mg,200,10.85,2170.00,PharmaCorp Ltd,PCM2024A
+2024-11-16,Amoxicillin 250mg,150,31.50,4725.00,MediSupply Inc,AMX2024B
+2024-11-17,Cough Syrup 100ml,100,59.50,5950.00,HealthDist Co,CS2024C
+2024-11-18,Vitamin D3 Tablets,300,84.00,25200.00,VitaPharm Ltd,VD32024D
+2024-11-19,ORS Sachets,500,5.95,2975.00,ElectroMed Co,ORS2024E
+2024-11-20,Ibuprofen 400mg,180,15.40,2772.00,PainRelief Inc,IBU2024F
+2024-11-25,Paracetamol 500mg,150,10.85,1627.50,PharmaCorp Ltd,PCM2024G
+2024-11-26,Amoxicillin 250mg,100,31.50,3150.00,MediSupply Inc,AMX2024H
+2024-11-27,Cough Syrup 100ml,80,59.50,4760.00,HealthDist Co,CS2024I
+2024-11-28,Vitamin D3 Tablets,200,84.00,16800.00,VitaPharm Ltd,VD32024J
+2024-11-29,ORS Sachets,400,5.95,2380.00,ElectroMed Co,ORS2024K
+2024-11-30,Ibuprofen 400mg,120,15.40,1848.00,PainRelief Inc,IBU2024L
+2024-12-05,Paracetamol 500mg,250,10.85,2712.50,PharmaCorp Ltd,PCM2024M
+2024-12-06,Amoxicillin 250mg,200,31.50,6300.00,MediSupply Inc,AMX2024N
+2024-12-07,Cough Syrup 100ml,120,59.50,7140.00,HealthDist Co,CS2024O
+2024-12-08,Vitamin D3 Tablets,350,84.00,29400.00,VitaPharm Ltd,VD32024P
+2024-12-09,ORS Sachets,600,5.95,3570.00,ElectroMed Co,ORS2024Q
+2024-12-10,Ibuprofen 400mg,200,15.40,3080.00,PainRelief Inc,IBU2024R

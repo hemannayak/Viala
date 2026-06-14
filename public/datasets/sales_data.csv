@@ -1,0 +1,41 @@
+sale_date,medicine_name,quantity_sold,unit_price,total_amount,customer_type,category
+2024-12-01,Paracetamol 500mg,3,15.50,46.50,walk-in,Analgesic
+2024-12-01,Amoxicillin 250mg,2,45.00,90.00,prescription,Antibiotic
+2024-12-02,Cough Syrup 100ml,1,85.00,85.00,walk-in,Cough/Cold
+2024-12-02,Vitamin D3 Tablets,4,120.00,480.00,walk-in,Vitamin
+2024-12-03,ORS Sachets,6,8.50,51.00,walk-in,Hydration
+2024-12-03,Ibuprofen 400mg,2,22.00,44.00,prescription,Analgesic
+2024-12-04,Paracetamol 500mg,5,15.50,77.50,prescription,Analgesic
+2024-12-04,Amoxicillin 250mg,1,45.00,45.00,prescription,Antibiotic
+2024-12-05,Cough Syrup 100ml,3,85.00,255.00,walk-in,Cough/Cold
+2024-12-05,Vitamin D3 Tablets,2,120.00,240.00,walk-in,Vitamin
+2024-12-06,ORS Sachets,8,8.50,68.00,walk-in,Hydration
+2024-12-06,Ibuprofen 400mg,3,22.00,66.00,walk-in,Analgesic
+2024-12-07,Paracetamol 500mg,4,15.50,62.00,walk-in,Analgesic
+2024-12-07,Amoxicillin 250mg,2,45.00,90.00,prescription,Antibiotic
+2024-12-08,Cough Syrup 100ml,2,85.00,170.00,prescription,Cough/Cold
+2024-12-08,Vitamin D3 Tablets,3,120.00,360.00,walk-in,Vitamin
+2024-12-09,ORS Sachets,5,8.50,42.50,walk-in,Hydration
+2024-12-09,Ibuprofen 400mg,1,22.00,22.00,prescription,Analgesic
+2024-12-10,Paracetamol 500mg,6,15.50,93.00,walk-in,Analgesic
+2024-12-10,Amoxicillin 250mg,3,45.00,135.00,prescription,Antibiotic
+2024-12-11,Cough Syrup 100ml,4,85.00,340.00,walk-in,Cough/Cold
+2024-12-11,Vitamin D3 Tablets,1,120.00,120.00,walk-in,Vitamin
+2024-12-12,ORS Sachets,7,8.50,59.50,walk-in,Hydration
+2024-12-12,Ibuprofen 400mg,2,22.00,44.00,prescription,Analgesic
+2024-12-13,Paracetamol 500mg,3,15.50,46.50,prescription,Analgesic
+2024-12-13,Amoxicillin 250mg,1,45.00,45.00,prescription,Antibiotic
+2024-12-14,Cough Syrup 100ml,2,85.00,170.00,walk-in,Cough/Cold
+2024-12-14,Vitamin D3 Tablets,5,120.00,600.00,walk-in,Vitamin
+2024-12-15,ORS Sachets,4,8.50,34.00,walk-in,Hydration
+2024-12-15,Ibuprofen 400mg,3,22.00,66.00,walk-in,Analgesic
+2024-12-16,Paracetamol 500mg,2,15.50,31.00,walk-in,Analgesic
+2024-12-16,Amoxicillin 250mg,4,45.00,180.00,prescription,Antibiotic
+2024-12-17,Cough Syrup 100ml,1,85.00,85.00,prescription,Cough/Cold
+2024-12-17,Vitamin D3 Tablets,3,120.00,360.00,walk-in,Vitamin
+2024-12-18,ORS Sachets,6,8.50,51.00,walk-in,Hydration
+2024-12-18,Ibuprofen 400mg,1,22.00,22.00,prescription,Analgesic
+2024-12-19,Paracetamol 500mg,5,15.50,77.50,walk-in,Analgesic
+2024-12-19,Amoxicillin 250mg,2,45.00,90.00,prescription,Antibiotic
+2024-12-20,Cough Syrup 100ml,3,85.00,255.00,walk-in,Cough/Cold
+2024-12-20,Vitamin D3 Tablets,2,120.00,240.00,walk-in,Vitamin
