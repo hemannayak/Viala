@@ -263,7 +263,6 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
                     { label: 'How It Works', href: '/how-it-works' },
                     { label: 'Impact', href: '/impact' },
                     { label: 'Pricing', href: '/pricing' },
-                    { label: 'Roadmap', href: '#' },
                   ],
                 },
                 {
