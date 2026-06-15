@@ -53,45 +53,54 @@
 }
 
 :root {
-  /* Core surfaces */
-  --background: #F8F7F5;
-  --foreground: #0D0D0D;
+  /* ── SURFACES ────────────────────────────── */
+  --background: #F7F6F3;          /* warm cream — logo paper tone */
+  --foreground: #0D2B1A;          /* very dark forest green instead of black */
   --card: #FFFFFF;
-  --card-foreground: #0D0D0D;
+  --card-foreground: #0D2B1A;
   --popover: #FFFFFF;
-  --popover-foreground: #0D0D0D;
+  --popover-foreground: #0D2B1A;
 
-  /* Brand-mapped primitives */
-  --primary: #0D0D0D;
+  /* ── BRAND PRIMITIVES ────────────────────── */
+  /* Deep forest green (dark logo blade) as primary */
+  --primary: #0B4D2E;
   --primary-foreground: #FFFFFF;
-  --secondary: #F2F0ED;
-  --secondary-foreground: #0D0D0D;
-  --muted: #F2F0ED;
-  --muted-foreground: #6B7280;
-  --accent: #059669;
-  --accent-foreground: #FFFFFF;
-  --destructive: #DC2626;
-  --border: #E4E0D9;
-  --input: #E4E0D9;
-  --ring: #059669;
 
-  /* VIALA Design Tokens */
-  --viala-ink: #0D0D0D;
-  --viala-ink-light: #404040;
-  --viala-green: #059669;
-  --viala-green-light: #D1FAE5;
-  --viala-amber: #B45309;
-  --viala-surface: #F8F7F5;
-  --viala-surface-raised: #FFFFFF;
-  --viala-line: #E4E0D9;
-  /* Logo-extracted Gold palette */
-  --viala-gold: #C8970A;        /* rich mid-gold from logo swirl */
-  --viala-gold-light: #FEF3C7;  /* soft gold tint for backgrounds */
+  /* Soft warm surface as secondary */
+  --secondary: #F0EDE8;
+  --secondary-foreground: #0D2B1A;
+
+  /* Muted slate-green */
+  --muted: #EDF0EC;
+  --muted-foreground: #4A6358;
+
+  /* Gold from logo swirl as accent */
+  --accent: #C8970A;
+  --accent-foreground: #FFFFFF;
+
+  --destructive: #DC2626;
+  --border: #D9DDD5;
+  --input: #D9DDD5;
+  --ring: #059669;              /* focus rings stay bright green */
+
+  /* ── VIALA DESIGN TOKENS ─────────────────── */
+  --viala-ink: #0D2B1A;         /* deep forest green (was near-black) */
+  --viala-ink-light: #2D5A40;   /* mid forest green for body text */
+  --viala-green: #059669;       /* bright emerald — logo bright blade */
+  --viala-green-dark: #0B4D2E;  /* deep green — logo dark blade */
+  --viala-green-light: #D1FAE5; /* pale mint tint */
+  --viala-gold: #C8970A;        /* rich mid-gold — logo swirl */
+  --viala-gold-light: #FEF3C7;  /* pale gold tint */
   --viala-gold-deep: #92650A;   /* deep gold for hover/text */
+  --viala-amber: #B45309;       /* keep for warning states */
+  --viala-surface: #F7F6F3;     /* warm cream */
+  --viala-surface-raised: #FFFFFF;
+  --viala-line: #D9DDD5;        /* slightly green-tinted border */
 
   /* Typography */
   --radius: 0.75rem;
 }
+
 
 /* === BASE LAYER === */
 @layer base {
@@ -245,7 +254,7 @@
     align-items: center;
     gap: 8px;
     padding: 12px 24px;
-    background: var(--viala-ink);
+    background: var(--viala-green-dark);
     color: white;
     font-weight: 600;
     font-size: 0.9rem;
@@ -255,8 +264,8 @@
     cursor: pointer;
   }
   .btn-primary:hover {
-    background: #1a1a1a;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    background: #083D22;
+    box-shadow: 0 4px 16px rgba(11,77,46,0.3);
     transform: translateY(-1px);
   }
 
@@ -307,7 +316,7 @@
 
   /* Soft section background */
   .section-alt {
-    background: #F2F0ED;
+    background: linear-gradient(135deg, #EFF4F0 0%, #F5F1E8 100%);
   }
 
   /* Stat number */

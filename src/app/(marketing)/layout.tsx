@@ -102,7 +102,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
                 (e.currentTarget as HTMLElement).style.transform = 'none';
               }}
             >
-              Request Access →
+              Book a Demo →
             </Link>
           </div>
 
@@ -187,7 +187,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
                 className="px-4 py-3.5 text-base font-semibold rounded-xl text-center transition-all mt-1"
                 style={{ background: '#059669', color: '#FFFFFF' }}
               >
-                Request Access →
+                Book a Demo →
               </Link>
             </nav>
           </div>

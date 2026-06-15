@@ -521,16 +521,7 @@ function StackMarquee() {
             ))}
           </div>
 
-          {/* Center VIALA badge */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-[#E8E5DF]/80 shadow-md flex items-center gap-2 pointer-events-auto relative">
-              <div className="absolute inset-0 rounded-full bg-emerald-500/10 blur-md animate-pulse pointer-events-none" />
-              <div className="w-1.5 h-1.5 rounded-full bg-[#059669] animate-pulse" />
-              <span className="text-xs font-black tracking-tight text-[#0F172A]" style={{ fontFamily: 'var(--font-jakarta)' }}>VIALA</span>
-              <span className="h-3 w-px bg-[#E8E5DF]" />
-              <span className="text-[8px] font-black uppercase tracking-wider text-[#059669] font-mono">AI Lifecycle Layer</span>
-            </div>
-          </div>
+
         </div>
       </div>
     </section>
@@ -654,7 +645,7 @@ export default function HomePage() {
                   className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-[10px] text-[0.9rem] font-bold text-white transition-all shadow-md hover:shadow-lg hover:-translate-y-[1px]"
                   style={{ background: '#0F172A' }}
                 >
-                  Request Early Access <ArrowRight className="w-4 h-4" />
+                  Book a Demo <ArrowRight className="w-4 h-4" />
                 </Link>
                 <a href="#action-simulator"
                   className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-[10px] text-[0.9rem] font-bold border bg-white text-[#0F172A] border-[#E8E5DF] hover:bg-[#FAFAF8] transition-all"
