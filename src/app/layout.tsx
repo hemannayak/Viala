@@ -12,6 +12,7 @@ export const metadata: Metadata = {
   description: "The platform that helps healthcare organizations prevent medicine waste and recover value before expiry.",
 };
 
+// Build trigger to force Vercel deployment of the latest main branch
 // Validate configuration on startup
 if (typeof window === 'undefined') {
   const g = globalThis as typeof globalThis & { __vialaConfigLogged?: boolean }
