@@ -444,3 +444,54 @@ export function getInternalNotificationHtml(data: InternalNotificationData): str
     </html>
   `;
 }
+
+/**
+ * Generate plain text for customer confirmation email
+ */
+export function getCustomerConfirmationText(data: CustomerConfirmationData): string {
+  return `
+Your VIALA Demo Booking Confirmed
+
+Hello ${data.full_name},
+
+Thank you for requesting a demo of VIALA. We are excited to show you how our intelligent shelf-life and inventory optimization network can serve your healthcare facility.
+
+Here are your request details:
+- Organization: ${data.organization_name}
+- Facility Type: ${data.organization_type}
+- Work Email: ${data.work_email}
+- Submission Date: ${data.submitted_date}
+
+Our solutions team will analyze your requirements and reach out to schedule your demo.
+
+If you have any questions, feel free to contact us at viala.health@gmail.com.
+
+Best regards,
+The VIALA Solutions Team
+https://viala.vercel.app
+  `.trim();
+}
+
+/**
+ * Generate plain text for internal notification email
+ */
+export function getInternalNotificationText(data: InternalNotificationData): string {
+  return `
+New VIALA Demo Request Received
+
+A new demo request has been submitted on VIALA:
+
+- Name: ${data.full_name}
+- Email: ${data.work_email}
+- Phone: ${data.phone || 'N/A'}
+- Organization: ${data.organization_name}
+- Org Type: ${data.organization_type}
+- Locations: ${data.locations || 'N/A'}
+- Submitted At: ${data.submitted_at}
+
+Message / Challenge:
+${data.message || 'No message provided.'}
+
+Access VIALA Lead Dashboard to manage: https://viala.vercel.app/login
+  `.trim();
+}

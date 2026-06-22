@@ -5,6 +5,8 @@ import path from "path";
 import {
   getCustomerConfirmationHtml,
   getInternalNotificationHtml,
+  getCustomerConfirmationText,
+  getInternalNotificationText,
 } from "@/lib/email-templates";
 
 // Server-side Supabase client (uses env vars directly — no client bundle exposure)
@@ -86,15 +88,15 @@ export async function POST(req: Request) {
 
     // Send emails (fail-safe wrapper)
     try {
-      const customerHtml = getCustomerConfirmationHtml({
+      const customerData = {
         full_name: body.full_name,
         organization_name: body.organization_name,
         organization_type: body.organization_type ?? "N/A",
         work_email: body.work_email,
         submitted_date: formattedDate,
-      });
+      };
 
-      const internalHtml = getInternalNotificationHtml({
+      const internalData = {
         full_name: body.full_name,
         work_email: body.work_email,
         phone: body.phone ?? "",
@@ -103,7 +105,13 @@ export async function POST(req: Request) {
         locations: body.locations ?? "",
         message: body.message ?? "",
         submitted_at: submittedAtDate.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
-      });
+      };
+
+      const customerHtml = getCustomerConfirmationHtml(customerData);
+      const customerText = getCustomerConfirmationText(customerData);
+
+      const internalHtml = getInternalNotificationHtml(internalData);
+      const internalText = getInternalNotificationText(internalData);
 
       const mailUser = process.env.GMAIL_USER || "viala.health@gmail.com";
       const logoPath = path.join(process.cwd(), "public", "logo", "viala_logo_white.png");
@@ -114,6 +122,7 @@ export async function POST(req: Request) {
         to: body.work_email,
         subject: "Your VIALA Demo Booking Confirmed",
         html: customerHtml,
+        text: customerText,
         attachments: [
           {
             filename: "viala_logo.png",
@@ -129,6 +138,7 @@ export async function POST(req: Request) {
         to: "viala.health@gmail.com",
         subject: "New VIALA Demo Request Received",
         html: internalHtml,
+        text: internalText,
         attachments: [
           {
             filename: "viala_logo.png",
