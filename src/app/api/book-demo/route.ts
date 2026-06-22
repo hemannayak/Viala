@@ -10,6 +10,14 @@ import {
 // Server-side Supabase client (uses env vars directly — no client bundle exposure)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder-project.supabase.co";
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-key";
+
+// Check if credentials are using the default build fallback values or empty
+const isConfigured = 
+  process.env.NEXT_PUBLIC_SUPABASE_URL && 
+  process.env.NEXT_PUBLIC_SUPABASE_URL !== "https://placeholder-project.supabase.co" &&
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== "placeholder-key";
+
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Initialize Nodemailer transporter with Gmail SMTP
@@ -23,6 +31,17 @@ const transporter = nodemailer.createTransport({
 
 export async function POST(req: Request) {
   try {
+    if (!isConfigured) {
+      console.error("[book-demo] Supabase integration is not configured.");
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: "Supabase integration is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your Vercel Project Settings and trigger a redeploy." 
+        },
+        { status: 500 }
+      );
+    }
+
     const body = await req.json();
 
     // Basic validation
