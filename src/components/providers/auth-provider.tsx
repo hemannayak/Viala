@@ -2,7 +2,20 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { type AuthUser, type UserRole } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
+import type { User } from '@supabase/supabase-js'
+
+// ── Types ────────────────────────────────────────────────────────────────────
+export type UserRole = 'admin' | 'manager' | 'analyst' | 'viewer' | 'pharmacist'
+
+export interface AuthUser {
+  id: string
+  email: string
+  role: UserRole
+  full_name?: string
+  pharmacy_id?: string
+  organization_id?: string
+}
 
 interface AuthContextType {
   user: AuthUser | null
@@ -13,6 +26,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<{ error?: string }>
 }
 
+// ── Context ──────────────────────────────────────────────────────────────────
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function useAuth() {
@@ -23,72 +37,66 @@ export function useAuth() {
   return context
 }
 
-// Demo users — backend integration comes later
-const DEMO_USERS: Array<AuthUser & { password: string }> = [
-  {
-    id: 'admin-001',
-    email: 'admin@viala.com',
-    password: 'admin123',
-    role: 'admin',
-    pharmacy_id: 'pharm-1',
-  },
-  {
-    id: 'pharm-001',
-    email: 'pharmacist@viala.com',
-    password: 'pharm123',
-    role: 'pharmacist',
-    pharmacy_id: 'pharm-1',
-  },
-]
-
-const SESSION_KEY = 'viala_session_user'
-
-function loadStoredUser(): AuthUser | null {
-  if (typeof window === 'undefined') return null
-  try {
-    const stored = localStorage.getItem(SESSION_KEY)
-    return stored ? JSON.parse(stored) : null
-  } catch {
-    return null
+// ── Map Supabase User → AuthUser ─────────────────────────────────────────────
+function mapUser(supabaseUser: User): AuthUser {
+  return {
+    id: supabaseUser.id,
+    email: supabaseUser.email ?? '',
+    role: (supabaseUser.user_metadata?.role as UserRole) ?? 'viewer',
+    full_name: supabaseUser.user_metadata?.full_name,
+    organization_id: supabaseUser.user_metadata?.organization_id,
   }
 }
 
+// ── Provider ─────────────────────────────────────────────────────────────────
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
-  const role = user?.role || null
+  const role = user?.role ?? null
 
+  // Restore session on mount and subscribe to auth state changes
   useEffect(() => {
-    // Restore session from localStorage on mount
-    const stored = loadStoredUser()
-    setUser(stored)
-    setLoading(false)
-  }, [])
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ? mapUser(session.user) : null)
+      setLoading(false)
+    })
 
-  const signIn = async (email: string, password: string): Promise<{ error?: string }> => {
-    const match = DEMO_USERS.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+    // Listen for auth state changes (login, logout, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ? mapUser(session.user) : null)
+        setLoading(false)
+      }
     )
 
-    if (!match) {
-      return { error: 'Invalid email or password. Try admin@viala.com / admin123' }
-    }
+    return () => subscription.unsubscribe()
+  }, [])
 
-    const { password: _, ...userWithoutPassword } = match
-    localStorage.setItem(SESSION_KEY, JSON.stringify(userWithoutPassword))
-    setUser(userWithoutPassword)
+  // ── Sign In (Email / Password) ──────────────────────────────────────────────
+  const signIn = async (email: string, password: string): Promise<{ error?: string }> => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) return { error: error.message }
     return {}
   }
 
+  // ── Sign In (Google OAuth) ──────────────────────────────────────────────────
   const signInWithGoogle = async (): Promise<{ error?: string }> => {
-    // Demo mode: Google Sign-In is not available yet
-    return { error: 'Google Sign-In will be available after backend integration. Use admin@viala.com / admin123 for now.' }
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+      },
+    })
+    if (error) return { error: error.message }
+    return {}
   }
 
+  // ── Sign Out ────────────────────────────────────────────────────────────────
   const signOut = async () => {
-    localStorage.removeItem(SESSION_KEY)
+    await supabase.auth.signOut()
     setUser(null)
     router.push('/login')
   }
@@ -99,3 +107,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   )
 }
+

@@ -2,283 +2,382 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, CheckCircle, Server, UserCheck, Activity, FileSpreadsheet, Lock, Check } from 'lucide-react';
+import {
+  ArrowRight, CheckCircle2, TrendingUp, RotateCcw,
+  Shield, Clock, Loader2, AlertCircle, ChevronRight,
+} from 'lucide-react';
 
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+type FormData = {
+  full_name: string;
+  work_email: string;
+  phone: string;
+  organization_name: string;
+  organization_type: string;
+  locations: string;
+  message: string;
+};
+
+const INITIAL_FORM: FormData = {
+  full_name: '',
+  work_email: '',
+  phone: '',
+  organization_name: '',
+  organization_type: 'Pharmacy Chain',
+  locations: '',
+  message: '',
+};
+
+const VALUE_PROPS = [
+  { icon: TrendingUp, label: 'Recover Hidden Inventory Value', desc: 'Identify recoverable medicine stock 60–90 days before expiry.' },
+  { icon: RotateCcw, label: 'Intelligent Recovery Workflows', desc: 'Automated pathways for returns, transfers, and redistribution.' },
+  { icon: Shield, label: 'Compliance Documentation', desc: 'Audit-ready records for every recovery action taken.' },
+  { icon: Clock, label: '14-Day Implementation', desc: 'Connected to your PMS in read-only mode with zero downtime.' },
+];
+
+// ── Input Component ────────────────────────────────────────────────────────────
+function Field({
+  id, label, required, children,
+}: { id: string; label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div className="group">
+      <label
+        htmlFor={id}
+        className="block text-[10px] font-bold uppercase tracking-widest text-[#6B7280] mb-2 transition-colors group-focus-within:text-[#059669]"
+      >
+        {label}{required && <span className="text-[#F87171] ml-0.5">*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+const inputCls =
+  'w-full px-4 py-3 min-h-[46px] rounded-xl border border-[#E4E0D9] bg-white/80 text-sm text-[#0D2B1A] placeholder-[#C4BDB4] focus:outline-none focus:ring-2 focus:ring-[#059669]/30 focus:border-[#059669] transition-all';
+
+const selectCls =
+  'w-full px-4 py-3 min-h-[46px] rounded-xl border border-[#E4E0D9] bg-white/80 text-sm text-[#0D2B1A] focus:outline-none focus:ring-2 focus:ring-[#059669]/30 focus:border-[#059669] transition-all appearance-none cursor-pointer';
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function GetStartedPage() {
-  const [step, setStep] = useState<number>(1);
-  const [orgName, setOrgName] = useState<string>('');
-  const [orgType, setOrgType] = useState<string>('Pharmacy Chain');
-  const [locationsCount, setLocationsCount] = useState<string>('6-20');
-  const [fullName, setFullName] = useState<string>('');
-  const [workEmail, setWorkEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  
-  // Importer simulation states
-  const [isImporting, setIsImporting] = useState<boolean>(false);
-  const [importProgress, setImportProgress] = useState<number>(0);
-  const [importCompleted, setImportCompleted] = useState<boolean>(false);
+  const [step, setStep] = useState<1 | 2>(1);
+  const [formData, setFormData] = useState<FormData>(INITIAL_FORM);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [requestId, setRequestId] = useState('');
+  const [submittedAt, setSubmittedAt] = useState('');
 
-  const startInventorySync = () => {
-    if (isImporting) return;
-    setIsImporting(true);
-    setImportProgress(0);
-    const interval = setInterval(() => {
-      setImportProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsImporting(false);
-          setImportCompleted(true);
-          return 100;
-        }
-        return prev + 10;
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrorMsg('');
+    try {
+      const res = await fetch('/api/book-demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
       });
-    }, 150);
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error || 'Something went wrong.');
+      const now = new Date();
+      setRequestId(`VLA-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getTime()).slice(-5)}`);
+      setSubmittedAt(now.toLocaleString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }));
+      setStep(2);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Something went wrong.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const nextStep = () => setStep(prev => prev + 1);
-  const prevStep = () => setStep(prev => prev - 1);
-
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#FAFAF8] py-24 px-4 sm:px-6 lg:px-8">
-      
-      {/* Onboarding Box */}
-      <div className="w-full max-w-lg space-y-8 bg-white p-8 sm:p-10 rounded-2xl border border-[#E8E5DF] shadow-xl relative">
-        
-        {/* Top ribbon progress tracker */}
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#E8E5DF] rounded-t-2xl overflow-hidden flex">
-          <div className="h-full bg-[#10B981] transition-all duration-300" style={{ width: `${(step / 5) * 100}%` }} />
-        </div>
+    <div className="min-h-[calc(100vh-68px)] flex flex-col lg:flex-row bg-[#F8FAF9]">
 
-        {/* Step Indicator Header */}
-        <div className="flex justify-between items-center text-[10px] font-bold text-[#717171] uppercase tracking-wider">
-          <span>Step {step} of 5</span>
-          <span className="text-[#10B981]">{step === 5 ? 'Ready' : `Configuring ${orgType}`}</span>
-        </div>
+      {/* ══════════════════════════════════════════════════════════════════════
+          LEFT PANEL — Dark brand column
+      ══════════════════════════════════════════════════════════════════════ */}
+      <div className="lg:w-[42%] xl:w-[38%] bg-[#022C22] relative overflow-hidden flex flex-col">
 
-        {/* ── STEP 1: ORGANIZATION DETAILS ── */}
-        {step === 1 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight text-[#0F172A]" style={{ fontFamily: 'var(--font-jakarta)' }}>Create Organization</h2>
-              <p className="mt-2 text-xs text-[#717171]">Enter the baseline details of your healthcare or pharmacy organization to get started.</p>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-[#0F172A] uppercase tracking-wider mb-2">Organization Name</label>
-                <input
-                  type="text" value={orgName} onChange={(e) => setOrgName(e.target.value)} required
-                  className="block w-full rounded-md border border-[#E8E5DF] bg-white px-3.5 py-2 text-xs focus:border-[#10B981] focus:outline-none"
-                  placeholder="Apollo Care Network"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-[#0F172A] uppercase tracking-wider mb-2">Organization Type</label>
-                  <select
-                    value={orgType} onChange={(e) => setOrgType(e.target.value)}
-                    className="block w-full rounded-md border border-[#E8E5DF] bg-white px-3 py-2 text-xs focus:border-[#10B981] focus:outline-none"
-                  >
-                    <option>Pharmacy Chain</option>
-                    <option>Hospital Network</option>
-                    <option>Healthcare Network</option>
-                    <option>Independent Pharmacy</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[#0F172A] uppercase tracking-wider mb-2">Branches / Locations</label>
-                  <select
-                    value={locationsCount} onChange={(e) => setLocationsCount(e.target.value)}
-                    className="block w-full rounded-md border border-[#E8E5DF] bg-white px-3 py-2 text-xs focus:border-[#10B981] focus:outline-none"
-                  >
-                    <option>1-5</option>
-                    <option>6-20</option>
-                    <option>21-50</option>
-                    <option>50+</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={nextStep} disabled={!orgName}
-              className="w-full py-3 px-4 rounded-xl text-center text-xs font-bold text-white transition-all bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Continue to Locations Setup
-            </button>
-          </div>
-        )}
+        {/* Background grid */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.035]"
+          style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 47px, rgba(255,255,255,1) 47px, rgba(255,255,255,1) 48px), repeating-linear-gradient(90deg, transparent, transparent 47px, rgba(255,255,255,1) 47px, rgba(255,255,255,1) 48px)' }}
+        />
+        {/* Emerald glow */}
+        <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 65%)' }}
+        />
+        <div className="absolute bottom-0 right-0 w-[300px] h-[300px] pointer-events-none"
+          style={{ background: 'radial-gradient(circle at 100% 100%, rgba(6,95,70,0.35) 0%, transparent 60%)' }}
+        />
 
-        {/* ── STEP 2: LOCATIONS SETUP ── */}
-        {step === 2 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight text-[#0F172A]" style={{ fontFamily: 'var(--font-jakarta)' }}>Locations & Ports</h2>
-              <p className="mt-2 text-xs text-[#717171]">Configure active sync ports representing your physical medicine inventory shelves.</p>
-            </div>
-            <div className="border rounded-xl p-4 bg-[#FAFAF8] space-y-4">
-              <div className="flex items-center gap-3">
-                <Server className="w-5 h-5 text-[#10B981]" />
-                <div>
-                  <div className="text-xs font-bold text-[#0F172A]">Primary Distribution Hub</div>
-                  <div className="text-[10px] text-[#717171]">Active sync port: app.viala.in/ports/hub-delhi</div>
-                </div>
-              </div>
-              <div className="h-[1px] bg-[#E8E5DF]" />
-              <div className="flex items-center gap-3">
-                <Activity className="w-5 h-5 text-amber-600 animate-pulse" />
-                <div>
-                  <div className="text-xs font-bold text-[#0F172A]">Regional Shortage Locator</div>
-                  <div className="text-[10px] text-[#717171]">Calculates cross-branch deficits automatically</div>
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button onClick={prevStep} className="flex-1 py-3 px-4 rounded-xl border text-xs font-bold bg-white text-[#0F172A]">
-                Back
-              </button>
-              <button onClick={nextStep} className="flex-1 py-3 px-4 rounded-xl text-center text-xs font-bold text-white bg-[#0F172A] hover:bg-[#1E293B]">
-                Configure Team Accounts
-              </button>
-            </div>
-          </div>
-        )}
+        <div className="relative z-10 flex flex-col flex-1 p-8 xl:p-12">
 
-        {/* ── STEP 3: ADMIN USERS SETUP ── */}
-        {step === 3 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight text-[#0F172A]" style={{ fontFamily: 'var(--font-jakarta)' }}>Primary Administrator</h2>
-              <p className="mt-2 text-xs text-[#717171]">Setup credentials for the manager authorizing inventory transfer policies.</p>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-[#0F172A] uppercase tracking-wider mb-2">Administrator Full Name</label>
-                <input
-                  type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required
-                  className="block w-full rounded-md border border-[#E8E5DF] bg-white px-3.5 py-2 text-xs focus:border-[#10B981] focus:outline-none"
-                  placeholder="Dr. Aman Kumar"
-                />
+          {/* Step 1 left content */}
+          {step === 1 && (
+            <div className="flex-1 flex flex-col justify-center">
+              <div className="mb-8">
+                <span className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.15em] text-[#34D399] bg-[#034032] px-3 py-1.5 rounded-full mb-5 border border-[#065F46]">
+                  Book a Demo
+                </span>
+                <h1 className="text-3xl xl:text-[2.6rem] font-black text-white leading-[1.15] tracking-tight mb-4">
+                  Talk to Our<br />
+                  <span className="text-[#34D399]">Solutions</span><br />
+                  <span className="text-[#34D399]">Team.</span>
+                </h1>
+                <p className="text-[13px] text-[#4A7A68] leading-relaxed max-w-[300px]">
+                  Tell us about your healthcare network. Our solutions team will analyze your inventory operations.
+                </p>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-[#0F172A] uppercase tracking-wider mb-2">Work Email Address</label>
-                <input
-                  type="email" value={workEmail} onChange={(e) => setWorkEmail(e.target.value)} required
-                  className="block w-full rounded-md border border-[#E8E5DF] bg-white px-3.5 py-2 text-xs focus:border-[#10B981] focus:outline-none"
-                  placeholder="aman@apollo.com"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[#0F172A] uppercase tracking-wider mb-2">Secure Passkey / Password</label>
-                <input
-                  type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
-                  className="block w-full rounded-md border border-[#E8E5DF] bg-white px-3.5 py-2 text-xs focus:border-[#10B981] focus:outline-none"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button onClick={prevStep} className="flex-1 py-3 px-4 rounded-xl border text-xs font-bold bg-white text-[#0F172A]">
-                Back
-              </button>
-              <button
-                onClick={nextStep} disabled={!fullName || !workEmail || !password}
-                className="flex-1 py-3 px-4 rounded-xl text-center text-xs font-bold text-white bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Go to Inventory Import
-              </button>
-            </div>
-          </div>
-        )}
 
-        {/* ── STEP 4: INVENTORY IMPORT SYNC ── */}
-        {step === 4 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight text-[#0F172A]" style={{ fontFamily: 'var(--font-jakarta)' }}>Import Inventory</h2>
-              <p className="mt-2 text-xs text-[#717171]">Simulate importing your active inventory CSV register or connecting to PMS API keys.</p>
-            </div>
-            
-            <div className="border border-dashed border-[#E8E5DF] rounded-xl p-8 bg-[#FAFAF8] text-center space-y-4">
-              <FileSpreadsheet className="w-10 h-10 text-[#717171] mx-auto" />
-              <div>
-                <div className="text-xs font-bold text-[#0F172A]">Drag & Drop active inventory file</div>
-                <div className="text-[9px] text-[#717171] mt-1">Accepts standard .csv or PMS API JSON payload</div>
-              </div>
-              
-              {!isImporting && !importCompleted && (
-                <button
-                  onClick={startInventorySync}
-                  className="px-4 py-2 bg-[#10B981] hover:bg-emerald-600 rounded-lg text-white font-bold text-xs shadow-sm transition-all"
-                >
-                  Start Integration Sync
-                </button>
-              )}
-
-              {isImporting && (
-                <div className="space-y-2 max-w-[240px] mx-auto">
-                  <div className="h-1.5 w-full bg-[#E8E5DF] rounded-full overflow-hidden">
-                    <div className="h-full bg-[#10B981] transition-all duration-150" style={{ width: `${importProgress}%` }} />
+              {/* Value props */}
+              <div className="space-y-2.5">
+                {VALUE_PROPS.map(({ icon: Icon, label, desc }) => (
+                  <div key={label} className="flex items-start gap-3.5 p-3.5 rounded-xl border border-[#0D3D2C] bg-[#031A13]/80 backdrop-blur-sm">
+                    <div className="w-7 h-7 rounded-lg bg-[#065F46] flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Icon className="w-3.5 h-3.5 text-[#34D399]" />
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-bold text-white mb-0.5">{label}</p>
+                      <p className="text-[11px] text-[#3A6B58] leading-relaxed">{desc}</p>
+                    </div>
                   </div>
-                  <div className="text-[9px] text-[#717171] font-mono">Parsing medicine expiries: {importProgress}%</div>
+                ))}
+              </div>
+
+              <p className="mt-6 text-[10px] text-[#1E4030]">
+                No commitment required · Response within 24 hours
+              </p>
+            </div>
+          )}
+
+          {/* Step 2 left content */}
+          {step === 2 && (
+            <div className="flex-1 flex flex-col justify-center">
+              <div className="w-16 h-16 rounded-full bg-[#065F46] border border-[#047857] flex items-center justify-center mb-6">
+                <CheckCircle2 className="w-8 h-8 text-[#34D399]" />
+              </div>
+              <h2 className="text-2xl xl:text-3xl font-black text-white mb-3 leading-tight">
+                Your request<br />is confirmed.
+              </h2>
+              <p className="text-[13px] text-[#4A7A68] leading-relaxed max-w-[280px] mb-8">
+                Our healthcare solutions team will review your requirements and reach out within 24 hours.
+              </p>
+              <div className="space-y-3">
+                {['Team reviews your profile', 'Solutions specialist contacts you', 'Tailored assessment presented'].map((t, i) => (
+                  <div key={t} className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-full bg-[#034032] border border-[#065F46] text-[#34D399] text-[10px] font-black flex items-center justify-center flex-shrink-0">{i + 1}</div>
+                    <span className="text-[12px] text-[#3A6B58]">{t}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Bottom branding */}
+          <p className="relative z-10 text-[9px] text-[#1A3D2B] font-mono mt-8">
+            VIALA Technologies · Healthcare Recovery Intelligence
+          </p>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          RIGHT PANEL — Form / Success
+      ══════════════════════════════════════════════════════════════════════ */}
+      <div className="flex-1 flex flex-col items-center justify-center px-5 sm:px-8 py-14 lg:py-12">
+
+        {/* ── STEP 1 — Form ── */}
+        {step === 1 && (
+          <div className="w-full max-w-[520px]">
+
+            {/* Progress indicator */}
+            <div className="flex items-center gap-2 mb-8">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-[#059669] flex items-center justify-center">
+                  <span className="text-[9px] font-black text-white">1</span>
                 </div>
-              )}
-
-              {importCompleted && (
-                <div className="text-xs font-bold text-[#10B981] flex items-center justify-center gap-1.5 animate-pulse">
-                  <CheckCircle className="w-4 h-4" /> 1,480 medicine SKUs Parsed Successfully
+                <span className="text-[11px] font-bold text-[#059669]">Your Details</span>
+              </div>
+              <ChevronRight className="w-3 h-3 text-[#D1CEC9]" />
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-[#E4E0D9] flex items-center justify-center">
+                  <span className="text-[9px] font-bold text-[#9CA3AF]">2</span>
                 </div>
-              )}
+                <span className="text-[11px] font-medium text-[#9CA3AF]">Confirmation</span>
+              </div>
             </div>
 
-            <div className="flex gap-3">
-              <button onClick={prevStep} className="flex-1 py-3 px-4 rounded-xl border text-xs font-bold bg-white text-[#0F172A]">
-                Back
-              </button>
-              <button
-                onClick={nextStep} disabled={!importCompleted}
-                className="flex-1 py-3 px-4 rounded-xl text-center text-xs font-bold text-white bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                View Mission Control
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── STEP 5: ONBOARDING COMPLETE ── */}
-        {step === 5 && (
-          <div className="space-y-6 text-center">
-            <div className="w-12 h-12 rounded-full bg-emerald-50 text-[#10B981] flex items-center justify-center mx-auto mb-4 border border-emerald-200">
-              <Check className="w-6 h-6" />
-            </div>
-            
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight text-[#0F172A]" style={{ fontFamily: 'var(--font-jakarta)' }}>Mission Control Ready</h2>
-              <p className="mt-2 text-xs text-[#717171]">
-                Your organization registration is complete. VIALA has connected to the PMS port and verified active compliance ledgers.
+            <div className="mb-7">
+              <h2 className="text-2xl sm:text-3xl font-black text-[#0D2B1A] tracking-tight mb-2">
+                Book a Demo
+              </h2>
+              <p className="text-[13px] text-[#9CA3AF]">
+                Tell us about your organization and we&apos;ll prepare a personalized walkthrough.
               </p>
             </div>
 
-            <div className="border rounded-xl p-4 bg-[#FAFAF8] text-left text-xs font-mono space-y-1.5 text-[#717171]">
-              <div><span className="text-emerald-600">Sync Status:</span> OK (API Port Connected)</div>
-              <div><span className="text-emerald-600">Audit Signatures:</span> e3b0c442...92bf</div>
-              <div><span className="text-emerald-600">Locations Tracked:</span> {locationsCount} active branches</div>
-            </div>
+            {/* Error */}
+            {errorMsg && (
+              <div role="alert" aria-live="assertive" className="flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 mb-5">
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
 
-            <Link
-              href="/"
-              className="block w-full py-3 px-4 rounded-xl text-center text-xs font-bold text-white transition-all bg-[#10B981] hover:bg-emerald-600 shadow-md"
-            >
-              Enter Dashboard Console
-            </Link>
+            <form onSubmit={handleSubmit} className="space-y-4">
+
+              {/* Row 1 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field id="full_name" label="Full Name" required>
+                  <input id="full_name" name="full_name" type="text" required autoComplete="name"
+                    value={formData.full_name} onChange={handleChange} placeholder="Dr. Anish Patel" className={inputCls} />
+                </Field>
+                <Field id="phone" label="Phone Number">
+                  <input id="phone" name="phone" type="tel" autoComplete="tel" inputMode="tel"
+                    value={formData.phone} onChange={handleChange} placeholder="+91 98765 43210" className={inputCls} />
+                </Field>
+              </div>
+
+              {/* Work Email */}
+              <Field id="work_email" label="Work Email" required>
+                <input id="work_email" name="work_email" type="email" required autoComplete="email" inputMode="email"
+                  value={formData.work_email} onChange={handleChange} placeholder="anish@apollocare.com" className={inputCls} />
+              </Field>
+
+              {/* Row 2 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field id="organization_name" label="Organization" required>
+                  <input id="organization_name" name="organization_name" type="text" required autoComplete="organization"
+                    value={formData.organization_name} onChange={handleChange} placeholder="Apollo Care Network" className={inputCls} />
+                </Field>
+                <Field id="organization_type" label="Organization Type">
+                  <div className="relative">
+                    <select id="organization_type" name="organization_type"
+                      value={formData.organization_type} onChange={handleChange} className={selectCls}>
+                      <option>Pharmacy Chain</option>
+                      <option>Hospital Group</option>
+                      <option>Clinic Network</option>
+                      <option>Distributor</option>
+                      <option>Healthcare Enterprise</option>
+                    </select>
+                    <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] rotate-90 pointer-events-none" />
+                  </div>
+                </Field>
+              </div>
+
+              {/* Locations */}
+              <Field id="locations" label="Number of Locations">
+                <div className="relative">
+                  <select id="locations" name="locations" value={formData.locations} onChange={handleChange} className={selectCls}>
+                    <option value="">Select range</option>
+                    <option>1–5</option>
+                    <option>6–20</option>
+                    <option>21–50</option>
+                    <option>51–100</option>
+                    <option>100+</option>
+                  </select>
+                  <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] rotate-90 pointer-events-none" />
+                </div>
+              </Field>
+
+              {/* Message */}
+              <Field id="message" label="Tell Us About Your Challenge">
+                <textarea id="message" name="message" rows={3} value={formData.message} onChange={handleChange}
+                  placeholder="Describe your current inventory challenges, expiry losses, or what you'd like VIALA to solve..."
+                  className={`${inputCls} resize-none`} />
+              </Field>
+
+              {/* Submit */}
+              <button type="submit" disabled={loading}
+                className="w-full flex items-center justify-center gap-2.5 py-4 min-h-[52px] rounded-xl bg-[#065F46] hover:bg-[#047857] active:bg-[#065F46] text-white font-bold text-sm transition-all duration-200 shadow-lg hover:shadow-xl hover:translate-y-[-1px] disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0 mt-1"
+              >
+                {loading
+                  ? <><Loader2 className="w-4 h-4 animate-spin" />Submitting...</>
+                  : <>Book a Demo <ArrowRight className="w-4 h-4" /></>
+                }
+              </button>
+
+              <p className="text-center text-[10px] text-[#B0AA9F] pt-1">
+                Your information is secure and will never be shared with third parties.
+              </p>
+            </form>
+
+            <p className="mt-8 text-center text-[12px] text-[#9CA3AF]">
+              Already have an account?{' '}
+              <Link href="/login" className="font-bold text-[#059669] hover:underline">Sign in</Link>
+            </p>
           </div>
         )}
 
-        <p className="text-center text-xs text-[#717171]">
-          Already have an account?{' '}
-          <Link href="/login" className="font-bold text-[#10B981] hover:underline">
-            Sign in
-          </Link>
-        </p>
+        {/* ── STEP 2 — Confirmation ── */}
+        {step === 2 && (
+          <div className="w-full max-w-[480px]">
 
+            {/* Progress indicator */}
+            <div className="flex items-center gap-2 mb-8">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-[#E4E0D9] flex items-center justify-center">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#059669]" />
+                </div>
+                <span className="text-[11px] font-medium text-[#9CA3AF]">Your Details</span>
+              </div>
+              <ChevronRight className="w-3 h-3 text-[#D1CEC9]" />
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-[#059669] flex items-center justify-center">
+                  <span className="text-[9px] font-black text-white">2</span>
+                </div>
+                <span className="text-[11px] font-bold text-[#059669]">Confirmation</span>
+              </div>
+            </div>
+
+            <div className="mb-7">
+              <h2 className="text-2xl sm:text-3xl font-black text-[#0D2B1A] tracking-tight mb-2">
+                Demo Request<br />Received
+              </h2>
+              <p className="text-[13px] text-[#9CA3AF]">
+                Our healthcare solutions team will review your details and contact you within 24 hours to schedule your demo.
+              </p>
+            </div>
+
+            {/* Demo Details */}
+            <div className="bg-white rounded-2xl border border-[#E4E0D9] shadow-sm overflow-hidden mb-5">
+              <div className="px-6 py-4 border-b border-[#F0EDE8] bg-[#FAFAF9]">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-[#9CA3AF]">Demo Details</p>
+              </div>
+              <div className="divide-y divide-[#F0EDE8]">
+                {[
+                  { label: 'Booking ID', value: requestId, mono: true },
+                  { label: 'Organization', value: formData.organization_name, mono: false },
+                  { label: 'Contact Email', value: formData.work_email, mono: false },
+                  { label: 'Submitted', value: submittedAt, mono: false },
+                ].map(({ label, value, mono }) => (
+                  <div key={label} className="flex items-center justify-between gap-4 px-6 py-3.5">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-[#9CA3AF] flex-shrink-0">{label}</span>
+                    <span className={`text-[12px] font-semibold text-[#0D2B1A] text-right ${mono ? 'font-mono' : ''}`}>{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* CTA buttons */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link href="/"
+                className="flex-1 flex items-center justify-center gap-2 py-3.5 min-h-[48px] rounded-xl bg-[#065F46] text-white text-sm font-bold hover:bg-[#047857] transition-all shadow-sm"
+              >
+                Return to Homepage
+              </Link>
+              <Link href="/how-it-works"
+                className="flex-1 flex items-center justify-center gap-2 py-3.5 min-h-[48px] rounded-xl border border-[#E4E0D9] bg-white text-[#0D2B1A] text-sm font-bold hover:bg-[#F8F7F5] transition-all"
+              >
+                Platform Overview <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

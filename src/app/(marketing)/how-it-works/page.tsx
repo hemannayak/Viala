@@ -1,760 +1,861 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight, ScanLine, Brain, Zap, Flag, BarChart3,
-  CheckCircle, ChevronRight, Shield, Lock, Users,
-  TrendingUp, RotateCcw, Package, Heart, Trash2,
-  AlertTriangle, Clock, FileText, ArrowUpRight, Activity
+  Shield, Lock, Users, Activity, Leaf, ChevronRight,
+  Database, TrendingUp, Layers, ArrowDown
 } from 'lucide-react';
 
-// ─── Animated counter on scroll ───────────────────────────────────────────────
-function StatCounter({ value, duration = 1800 }: { value: string; duration?: number }) {
-  const [count, setCount] = useState(0);
-  const ref = useRef<HTMLSpanElement>(null);
-  const [started, setStarted] = useState(false);
-
-  let prefix = '', suffix = '', target = 0, decimals = 0;
-  if (value.startsWith('₹')) { prefix = '₹'; const r = value.slice(1); if (r.endsWith('M+')) { suffix = 'M+'; target = parseFloat(r); decimals = 1; } else { target = parseInt(r.replace(/,/g, '')); } }
-  else if (value.endsWith('%')) { suffix = '%'; target = parseInt(value); }
-  else if (value.endsWith(' min')) { suffix = ' min'; target = parseInt(value); }
-  else { target = parseInt(value.replace(/,/g, '')); }
-
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setStarted(true); }, { threshold: 0.1 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!started) return;
-    const t0 = performance.now(); let id: number;
-    const tick = (now: number) => {
-      const p = Math.min((now - t0) / duration, 1), ease = p * (2 - p);
-      setCount(ease * target);
-      if (p < 1) id = requestAnimationFrame(tick);
-    };
-    id = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(id);
-  }, [started, target, duration]);
-
-  const fmt = () => {
-    if (decimals > 0) return `${prefix}${count.toFixed(decimals)}${suffix}`;
-    return `${prefix}${Math.floor(count).toLocaleString('en-IN')}${suffix}`;
-  };
-  return <span ref={ref}>{fmt()}</span>;
-}
-
-// ─── Step 1 mock: Intake & Scan ────────────────────────────────────────────────
-function IntakeMock() {
-  return (
-    <div className="bg-white rounded-xl border border-[#E8E5DF] overflow-hidden text-left shadow-sm text-xs">
-      <div className="bg-[#F8FFF8] border-b border-[#D1FAE5] px-4 py-2.5 flex items-center justify-between">
-        <span className="font-mono text-[10px] text-[#059669] font-bold">viala.app/intake/scan</span>
-        <span className="bg-[#D1FAE5] text-[#065F46] text-[9px] font-bold px-2 py-0.5 rounded-full">● SCANNING</span>
-      </div>
-      <div className="p-4 space-y-3">
-        <div className="bg-[#F0FDF4] border border-[#A7F3D0] rounded-lg p-3 flex items-center gap-3">
-          <ScanLine className="w-5 h-5 text-[#059669] flex-shrink-0" />
-          <div>
-            <div className="text-[9px] text-[#6B7280] uppercase tracking-wider mb-0.5">Batch Detected</div>
-            <div className="font-black text-[#059669] font-mono">AMX-2024-453 ✓</div>
-          </div>
-        </div>
-        {[
-          ['Medicine', 'Amoxicillin 500mg'],
-          ['Expiry Date', '15 Nov 2024 · 45 days'],
-          ['Quantity', '240 units'],
-          ['Branch', 'Mumbai Central'],
-          ['Vendor', 'Cipla Ltd'],
-          ['Cost Price', '₹1,20,000'],
-        ].map(([k, v]) => (
-          <div key={k} className="flex justify-between items-center py-1.5 border-b border-[#F0EDE8] last:border-0">
-            <span className="text-[#9CA3AF] text-[10px] font-medium">{k}</span>
-            <span className="font-semibold text-[#0F172A] text-[11px]">{v}</span>
-          </div>
-        ))}
-        <div className="mt-3 bg-[#059669] text-white rounded-lg py-2 text-center text-[10px] font-bold tracking-wide">
-          ✓ Registered in Lifecycle Engine — 4s
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Step 2 mock: Lifecycle Engine ────────────────────────────────────────────
-const HEATMAP = [
-  { name: 'Amoxicillin', branches: ['safe','safe','monitor','critical'] },
-  { name: 'Metformin', branches: ['safe','monitor','at-risk','monitor'] },
-  { name: 'Lisinopril', branches: ['safe','safe','safe','monitor'] },
-  { name: 'Dolo 650', branches: ['monitor','at-risk','critical','at-risk'] },
-  { name: 'Azithromycin', branches: ['safe','safe','monitor','safe'] },
-];
-const CELL: Record<string, { bg: string; text: string; label: string }> = {
-  safe:     { bg: '#D1FAE5', text: '#065F46', label: 'Safe' },
-  monitor:  { bg: '#FEF3C7', text: '#92400E', label: 'Monitor' },
-  'at-risk':{ bg: '#FED7AA', text: '#9A3412', label: 'At Risk' },
-  critical: { bg: '#FEE2E2', text: '#991B1B', label: 'Critical' },
-};
-function LifecycleMock() {
-  return (
-    <div className="bg-white rounded-xl border border-[#E8E5DF] overflow-hidden text-left shadow-sm">
-      <div className="bg-[#EFF6FF] border-b border-[#BFDBFE] px-4 py-2.5 flex items-center justify-between">
-        <span className="font-mono text-[10px] text-[#2563EB] font-bold">viala.app/lifecycle/heatmap</span>
-        <span className="bg-[#DBEAFE] text-[#1E40AF] text-[9px] font-bold px-2 py-0.5 rounded-full animate-pulse">● LIVE</span>
-      </div>
-      <div className="p-4">
-        <div className="text-[9px] uppercase tracking-wider font-bold text-[#9CA3AF] mb-2">Risk Heatmap — Branches</div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-[9px]">
-            <thead>
-              <tr>
-                <th className="text-left pb-1.5 text-[#9CA3AF] font-medium pr-3">Medicine</th>
-                {['Mumbai','Delhi','Pune','Chennai'].map(b => (
-                  <th key={b} className="text-center pb-1.5 text-[#9CA3AF] font-medium px-1">{b}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="space-y-1">
-              {HEATMAP.map(row => (
-                <tr key={row.name}>
-                  <td className="pr-3 py-1 font-medium text-[#374151] text-[10px] whitespace-nowrap">{row.name}</td>
-                  {row.branches.map((status, j) => (
-                    <td key={j} className="px-1 py-1 text-center">
-                      <span
-                        className="inline-block px-2 py-0.5 rounded text-[8px] font-bold"
-                        style={{ background: CELL[status].bg, color: CELL[status].text }}
-                      >
-                        {CELL[status].label}
-                      </span>
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-3 grid grid-cols-4 gap-1.5 text-center">
-          {[['Safe','#059669','1,240'],['Monitor','#B45309','486'],['At Risk','#EA580C','248'],['Critical','#DC2626','82']].map(([l,c,v]) => (
-            <div key={l} className="rounded p-1.5" style={{ background: `${c}10` }}>
-              <div className="font-black text-sm" style={{ color: c }}>{v}</div>
-              <div className="text-[8px] text-[#9CA3AF]">{l}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Step 3 mock: Decision Engine ─────────────────────────────────────────────
-const OUTCOMES_DE = [
-  { key: 'sell', label: 'Sell', icon: TrendingUp, available: false, value: null },
-  { key: 'return', label: 'Return to Vendor', icon: RotateCcw, available: true, value: '₹96,000', recommended: true },
-  { key: 'transfer', label: 'Transfer', icon: Package, available: true, value: '₹84,000' },
-  { key: 'donate', label: 'Donate', icon: Heart, available: true, value: 'Tax benefit' },
-  { key: 'dispose', label: 'Dispose', icon: Trash2, available: false, value: null },
-];
-function DecisionMock() {
-  const [selected, setSelected] = useState('return');
-  return (
-    <div className="bg-white rounded-xl border border-[#E8E5DF] overflow-hidden text-left shadow-sm">
-      <div className="bg-[#F5F3FF] border-b border-[#DDD6FE] px-4 py-2.5 flex items-center justify-between">
-        <span className="font-mono text-[10px] text-[#7C3AED] font-bold">viala.app/decision-engine</span>
-        <span className="bg-[#EDE9FE] text-[#5B21B6] text-[9px] font-bold px-2 py-0.5 rounded-full">Batch AMX-453</span>
-      </div>
-      <div className="p-4">
-        <div className="text-[9px] uppercase tracking-wider font-bold text-[#9CA3AF] mb-2">Outcome Evaluation</div>
-        <div className="space-y-1.5 mb-4">
-          {OUTCOMES_DE.map(o => (
-            <button
-              key={o.key}
-              onClick={() => o.available && setSelected(o.key)}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border text-left transition-all text-xs"
-              style={{
-                borderColor: selected === o.key ? '#7C3AED' : o.recommended ? '#DDD6FE' : '#F0EDE8',
-                background: selected === o.key ? '#F5F3FF' : '#FAFAF8',
-                opacity: o.available ? 1 : 0.4,
-              }}
-            >
-              <o.icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: selected === o.key ? '#7C3AED' : '#9CA3AF' }} />
-              <span className="flex-1 font-medium text-[#374151]">{o.label}</span>
-              {o.recommended && <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-[#7C3AED] text-white">RECOMMENDED</span>}
-              {o.value && <span className="text-[10px] font-bold text-[#059669]">{o.value}</span>}
-              {!o.available && <span className="text-[8px] text-[#D1D5DB]">N/A</span>}
-            </button>
-          ))}
-        </div>
-        <div className="bg-[#F5F3FF] border border-[#DDD6FE] rounded-lg p-3">
-          <div className="flex justify-between items-center mb-1.5">
-            <span className="text-[10px] font-bold text-[#5B21B6]">Confidence Score</span>
-            <span className="text-base font-black text-[#7C3AED]">96%</span>
-          </div>
-          <div className="w-full bg-[#EDE9FE] h-1.5 rounded-full">
-            <div className="h-full bg-[#7C3AED] rounded-full" style={{ width: '96%' }} />
-          </div>
-          <div className="text-[9px] text-[#6B7280] mt-1.5">Vendor window open · 18 days remaining · Credit: ₹96,000</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Step 4 mock: Mission Control ─────────────────────────────────────────────
-const ACTIONS = [
-  { type: 'Transfer', label: 'Transfer 12 SKUs', detail: 'Mumbai → Delhi · ₹84,000', priority: 'urgent', color: '#7C3AED' },
-  { type: 'Return', label: 'Return 4 SKUs to Cipla', detail: 'Window closes in 18 days · ₹96,000', priority: 'today', color: '#2563EB' },
-  { type: 'Donate', label: 'Donate 2 SKUs', detail: 'HelpAge India · 640 patients', priority: 'today', color: '#DB2777' },
-  { type: 'Scan', label: 'Register incoming batch', detail: 'Metformin 850mg · 500 units', priority: 'scheduled', color: '#059669' },
-];
-function MissionControlMock() {
-  return (
-    <div className="bg-white rounded-xl border border-[#E8E5DF] overflow-hidden text-left shadow-sm">
-      <div className="bg-[#FFFBEB] border-b border-[#FDE68A] px-4 py-2.5 flex items-center justify-between">
-        <span className="font-mono text-[10px] text-[#B45309] font-bold">viala.app/mission-control</span>
-        <span className="bg-[#FEF3C7] text-[#92400E] text-[9px] font-bold px-2 py-0.5 rounded-full">24 Actions Pending</span>
-      </div>
-      <div className="p-4">
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          {[['₹1.8M','Recovery Today','#059669'],['6','Urgent','#DC2626'],['18','Due Today','#B45309']].map(([v,l,c]) => (
-            <div key={l} className="text-center p-2 rounded-lg bg-[#FAFAF8] border border-[#E8E5DF]">
-              <div className="font-black text-lg leading-none" style={{ color: c }}>{v}</div>
-              <div className="text-[9px] text-[#9CA3AF] mt-0.5">{l}</div>
-            </div>
-          ))}
-        </div>
-        <div className="text-[9px] uppercase tracking-wider font-bold text-[#9CA3AF] mb-2">Action Queue</div>
-        <div className="space-y-2">
-          {ACTIONS.map(a => (
-            <div key={a.label} className="flex items-start gap-2.5 p-2.5 rounded-lg border border-[#F0EDE8] bg-[#FAFAF8]">
-              <span
-                className="text-[8px] font-black px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5"
-                style={{
-                  background: a.priority === 'urgent' ? '#FEE2E2' : a.priority === 'today' ? '#FEF3C7' : '#F3F4F6',
-                  color: a.priority === 'urgent' ? '#DC2626' : a.priority === 'today' ? '#B45309' : '#6B7280',
-                }}
-              >
-                {a.priority.toUpperCase()}
-              </span>
-              <div className="flex-1 min-w-0">
-                <div className="text-[11px] font-bold text-[#0F172A]">{a.label}</div>
-                <div className="text-[9px] text-[#6B7280]">{a.detail}</div>
-              </div>
-              <button className="text-[8px] font-bold px-2 py-1 rounded flex-shrink-0" style={{ background: `${a.color}15`, color: a.color }}>
-                Approve
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Step 5 mock: Outcome & Reporting ─────────────────────────────────────────
-const DOCS = [
-  { name: 'Vendor Credit Report', sub: 'Cipla · ₹96,000 · Batch AMX-453', status: 'Generated', color: '#2563EB', icon: FileText },
-  { name: 'Donation Certificate', sub: 'HelpAge India · 320 units · 80G', status: 'Generated', color: '#DB2777', icon: Heart },
-  { name: 'Schedule M Audit Trail', sub: 'Complete · 100% compliant', status: 'Signed', color: '#059669', icon: Shield },
-  { name: 'Disposal Record', sub: 'Gabapentin · EcoPharm · Certified', status: 'Sealed', color: '#6B7280', icon: Lock },
-];
-function ReportingMock() {
-  return (
-    <div className="bg-white rounded-xl border border-[#E8E5DF] overflow-hidden text-left shadow-sm">
-      <div className="bg-[#FFF0F8] border-b border-[#FBCFE8] px-4 py-2.5 flex items-center justify-between">
-        <span className="font-mono text-[10px] text-[#DB2777] font-bold">viala.app/reports</span>
-        <span className="bg-[#FCE7F3] text-[#9D174D] text-[9px] font-bold px-2 py-0.5 rounded-full">48 docs this month</span>
-      </div>
-      <div className="p-4">
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          {[['48','Docs Generated','#DB2777'],['₹4.2L','Credits Filed','#059669'],['100%','Compliance','#2563EB']].map(([v,l,c]) => (
-            <div key={l} className="text-center p-2 rounded-lg bg-[#FAFAF8] border border-[#E8E5DF]">
-              <div className="font-black text-sm leading-none" style={{ color: c }}>{v}</div>
-              <div className="text-[9px] text-[#9CA3AF] mt-0.5">{l}</div>
-            </div>
-          ))}
-        </div>
-        <div className="text-[9px] uppercase tracking-wider font-bold text-[#9CA3AF] mb-2">Generated Documents</div>
-        <div className="space-y-2">
-          {DOCS.map(d => (
-            <div key={d.name} className="flex items-center gap-2.5 p-2.5 rounded-lg border border-[#F0EDE8] hover:bg-[#FAFAF8] transition-colors">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${d.color}15` }}>
-                <d.icon className="w-3.5 h-3.5" style={{ color: d.color }} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[11px] font-bold text-[#0F172A] truncate">{d.name}</div>
-                <div className="text-[9px] text-[#6B7280] truncate">{d.sub}</div>
-              </div>
-              <div className="flex items-center gap-1.5 flex-shrink-0">
-                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${d.color}15`, color: d.color }}>{d.status}</span>
-                <span className="text-[10px] text-[#9CA3AF] hover:text-[#059669] cursor-pointer font-medium">PDF ↓</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Steps data ───────────────────────────────────────────────────────────────
-const STEPS = [
+// ─── Interactive Medicine Journey Data (Section 2) ───────────────────────────
+const JOURNEY_STAGES = [
   {
-    number: '01', icon: ScanLine, color: '#059669', bg: '#F0FDF8',
-    title: 'Intake & Scan',
-    sub: 'Every medicine enters the system.',
-    desc: 'Staff scan each batch on arrival. VIALA captures lot number, expiry date, quantity, location, and cost. No manual entry. No spreadsheets.',
-    callout: 'Under 8 seconds per batch scan.',
-    mock: IntakeMock,
+    label: 'Intake Sync',
+    stage: 'Batch Intake',
+    title: 'Amoxicillin Batch AX-342 Registered',
+    icon: Database,
+    color: '#059669',
+    badge: 'API SYNCED',
+    meta: '120 Days To Expiry • Value: ₹1,50,000',
+    detail: 'Amoxicillin batch AX-342 is cataloged via ERP integration. VIALA automatically pulls distributor returns policies, purchase costs, and regional demand calendars into its background scoring engine.',
+    stateLabel: 'INTAKE RECORD ACTIVE'
   },
   {
-    number: '02', icon: Brain, color: '#2563EB', bg: '#EFF6FF',
-    title: 'Lifecycle Engine',
-    sub: 'Continuous, real-time monitoring.',
-    desc: 'From arrival, VIALA tracks each batch\'s full lifecycle — velocity, expiry windows, network demand, and vendor return eligibility simultaneously.',
-    callout: 'Updated every 90 seconds across your network.',
-    mock: LifecycleMock,
+    label: 'Risk Detected',
+    stage: 'Risk Identified',
+    title: 'Regional Demand Dip Identified',
+    icon: Brain,
+    color: '#2563EB',
+    badge: 'RISK FLAGGED',
+    meta: '90 Days To Expiry • Expiry Probability: High',
+    detail: 'VIALA registers a 45% decline in regional prescription velocities for Amoxicillin. The local pharmacy branch is projected to experience a surplus, creating an active risk of a 100% write-off.',
+    stateLabel: 'CRITICAL WINDOW OPEN'
   },
   {
-    number: '03', icon: Zap, color: '#7C3AED', bg: '#F5F3FF',
-    title: 'Decision Engine',
-    sub: 'Intelligence, not guesswork.',
-    desc: 'When stock enters the risk window, the Decision Engine evaluates all six possible outcomes and recommends the highest-value action with a confidence score.',
-    callout: 'Average decision latency: 6 minutes.',
-    mock: DecisionMock,
+    label: 'Engine Scoring',
+    stage: 'Decision Engine',
+    title: 'Background Option Evaluation',
+    icon: Layers,
+    color: '#7C3AED',
+    badge: 'EVALUATING',
+    meta: '6 Outcomes Evaluated Simultaneously',
+    detail: 'The lifecycle engine automatically maps the batch against active vendor credit agreements, inter-branch supply shortfalls, secondary reselling channels, and donation offsets.',
+    stateLabel: 'SCORING ACTIVE'
   },
   {
-    number: '04', icon: Flag, color: '#B45309', bg: '#FFFBEB',
-    title: 'Mission Control',
-    sub: 'Your operations, unified.',
-    desc: 'Every pending action — transfer, return, donate — appears in a prioritised queue. Staff approve in one click. No ambiguity. No missed windows.',
-    callout: 'Reduces decision fatigue by 70%.',
-    mock: MissionControlMock,
+    label: 'Paths Compared',
+    stage: 'Recovery Comparison',
+    title: 'Financial Outcomes Compared',
+    icon: TrendingUp,
+    color: '#F59E0B',
+    badge: 'COMPILING OPTIONS',
+    meta: 'Return Credit vs. Transfer vs. Donation',
+    detail: 'VIALA compares: (1) Vendor Return credit at 80% (eligible for 10 more days), (2) Inter-Branch Transfer recovering 100% cost basis, and (3) CSR Donation yielding 30% tax offset.',
+    stateLabel: 'DIFFERENTIAL ANALYZED'
   },
   {
-    number: '05', icon: BarChart3, color: '#DB2777', bg: '#FFF0F8',
-    title: 'Outcome & Reporting',
-    sub: 'Every action, documented.',
-    desc: 'Each outcome generates a full audit trail. Vendor credit reports, donation certificates, compliance records — all auto-generated and digitally signed.',
-    callout: '100% traceability from intake to disposal.',
-    mock: ReportingMock,
+    label: 'Recommended',
+    stage: 'Recommended Outcome',
+    title: 'Inter-Branch Transfer Recommended',
+    icon: Zap,
+    color: '#10B981',
+    badge: 'RECOMMENDATION',
+    meta: 'Divert Surplus to Mumbai Hub C',
+    detail: 'VIALA determines that Branch C in Mumbai has an active stock-out deficit for Amoxicillin. Transferring the batch recovers 100% margin value while preventing patient service delays.',
+    stateLabel: 'OPTIMAL VALUE PATHWAY'
   },
+  {
+    label: 'Execution',
+    stage: 'Action Execution',
+    title: 'One-Click Routing Approved',
+    icon: Flag,
+    color: '#B45309',
+    badge: 'EXECUTED',
+    meta: 'Manifest & Courier Dispatched',
+    detail: 'The system generates pre-filled returns papers and warehouse dispatch labels. The pharmacist clicks approval, triggering an automated courier pickup request to move stock instantly.',
+    stateLabel: 'DISPATCH IN PROGRESS'
+  },
+  {
+    label: 'Audit Sealed',
+    stage: 'Audit Logged',
+    title: 'Immutable Compliance Record Hashed',
+    icon: Shield,
+    color: '#DB2777',
+    badge: 'COMPLIANT & SECURE',
+    meta: 'CDSCO Schedule M Hashed • SHA-256',
+    detail: 'The transfer is sealed in the VIALA secure ledger. An audit-ready record is permanently generated, matching batch AX-342 lifecycle movements with CDSCO Schedule M compliance logs.',
+    stateLabel: 'LEDGER SECURED'
+  }
 ];
 
-// ─── Flow step nodes for animated hero ────────────────────────────────────────
-const FLOW_NODES = [
-  { label: 'Medicine\nReceived', icon: ScanLine, color: '#059669' },
-  { label: 'Lifecycle\nEngine', icon: Brain, color: '#2563EB' },
-  { label: 'Decision\nEngine', icon: Zap, color: '#7C3AED' },
-  { label: 'Mission\nControl', icon: Flag, color: '#B45309' },
-  { label: 'Value\nRecovered', icon: TrendingUp, color: '#059669' },
+// ─── Upgraded Pipeline / Modern Horizontal Timeline (Section 3) ───────────────
+const PIPELINE_STEPS = [
+  {
+    number: '01',
+    title: 'Inventory Intake',
+    benefit: 'Automatically syncs batch records and returns calendars from your ERP.',
+    icon: ScanLine
+  },
+  {
+    number: '02',
+    title: 'Risk Detection',
+    benefit: 'Flags surplus inventory and SLA expiration deadlines months in advance.',
+    icon: Brain
+  },
+  {
+    number: '03',
+    title: 'Decision Intelligence',
+    benefit: 'Compares return credits, donation offsets, and transfer margins automatically.',
+    icon: Zap
+  },
+  {
+    number: '04',
+    title: 'Execution',
+    benefit: 'Triggers pre-filled warehouse manifests and courier pickups in one click.',
+    icon: Flag
+  },
+  {
+    number: '05',
+    title: 'Audit & Reporting',
+    benefit: 'Permanently seals all inventory transfers in a compliant, secure digital ledger.',
+    icon: BarChart3
+  }
 ];
 
-// ─── FlipCard Component for Engines ──────────────────────────────────────────
-function FlipCard({ e, i }: { e: any; i: number }) {
-  const [isHovered, setIsHovered] = useState(false);
-  const Icon = e.icon;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: i * 0.1, duration: 0.4 }}
-      className="w-full h-[480px]"
-      style={{ perspective: '1500px' }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div
-        className="relative w-full h-full transition-transform duration-700"
-        style={{
-          transformStyle: 'preserve-3d',
-          transform: isHovered ? 'rotateY(180deg)' : 'rotateY(0deg)'
-        }}
-      >
-        {/* Front Side */}
-        <div
-          className="absolute inset-0 w-full h-full bg-white rounded-3xl border border-[#E8E5DF] p-6 shadow-sm flex flex-col justify-between overflow-hidden"
-          style={{
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-          }}
-        >
-          {/* Subtle top-right gradient glow */}
-          <div
-            className="absolute -top-16 -right-16 w-48 h-48 rounded-full opacity-20 blur-3xl"
-            style={{ background: e.color }}
-          />
-
-          <div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${e.color}15` }}>
-                <Icon className="w-5 h-5" style={{ color: e.color }} />
-              </div>
-              <h3 className="text-lg font-black text-[#0F172A] tracking-tight">{e.title}</h3>
-            </div>
-            <p className="text-xs text-[#6B7280] leading-relaxed">{e.desc}</p>
-          </div>
-
-          {/* Premium Image visual */}
-          <div className="relative w-full h-64 mt-4 rounded-2xl overflow-hidden border border-[#E8E5DF] bg-[#F9F9FB]">
-            <Image
-              src={e.image}
-              alt={e.title}
-              fill
-              className="object-cover transition-transform duration-700 hover:scale-105"
-            />
-            {/* Soft overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-60 pointer-events-none" />
-            <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-full text-[9px] font-bold text-[#0F172A] border border-[#E8E5DF]">
-              Hover to Flip
-            </div>
-          </div>
-        </div>
-
-        {/* Back Side */}
-        <div
-          className="absolute inset-0 w-full h-full bg-[#FAFAF9] rounded-3xl border border-[#E8E5DF] p-8 shadow-sm flex flex-col justify-between overflow-hidden"
-          style={{
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-            transform: 'rotateY(180deg)',
-          }}
-        >
-          {/* Subtle inner grid background */}
-          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px', color: e.color }} />
-
-          <div>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${e.color}15` }}>
-                <Icon className="w-5 h-5" style={{ color: e.color }} />
-              </div>
-              <h3 className="text-lg font-black text-[#0F172A] tracking-tight">{e.title} Capabilities</h3>
-            </div>
-
-            <div className="space-y-4">
-              {e.features.map((f: string) => (
-                <div key={f} className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: `${e.color}15` }}>
-                    <CheckCircle className="w-3.5 h-3.5" style={{ color: e.color }} />
-                  </div>
-                  <span className="text-xs font-bold text-[#374151]">{f}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Premium back decoration */}
-          <div className="mt-6 p-4 rounded-xl border border-dashed border-[#E8E5DF] bg-white flex flex-col gap-1.5 relative z-10">
-            <span className="text-[9px] font-bold tracking-wider uppercase" style={{ color: e.color }}>Integration Status</span>
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-extrabold text-[#0F172A]">Core Module Online</span>
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Active
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
+// ─── Differentiation Cards (Section 5) ───────────────────────────────────────
+const DIFFERENTIATION_CARDS = [
+  {
+    title: 'See Earlier',
+    benefit: 'Flags expiry risks 90+ days before windows close.'
+  },
+  {
+    title: 'Decide Smarter',
+    benefit: 'Compares all financial paths and returns credits automatically.'
+  },
+  {
+    title: 'Recover More',
+    benefit: 'Generates pre-filled claims manifests to capture value.'
+  }
+];
 
 export default function HowItWorksPage() {
-  const [activeNode, setActiveNode] = useState(0);
+  const [activeJourneyIdx, setActiveJourneyIdx] = useState(0);
+  const currentJourney = JOURNEY_STAGES[activeJourneyIdx];
 
+  // Auto transition steps for simulated medicine journey (every 7 seconds)
+  // Respects prefers-reduced-motion (WCAG 2.3.3)
   useEffect(() => {
-    const t = setInterval(() => setActiveNode(p => (p + 1) % FLOW_NODES.length), 1800);
-    return () => clearInterval(t);
-  }, []);
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return;
+    const timer = setInterval(() => {
+      setActiveJourneyIdx(prev => (prev + 1) % JOURNEY_STAGES.length);
+    }, 7000);
+    return () => clearInterval(timer);
+  }, [activeJourneyIdx]);
+
+  // Helper to render stage visual sandbox graphics (Section 2)
+  function renderJourneyVisual(idx: number) {
+    switch (idx) {
+      case 0:
+        return (
+          <div className="bg-white border border-[#D9DDD5] rounded-2xl p-4 shadow-sm font-mono text-[10px] space-y-2.5 text-left">
+            <div className="flex justify-between items-center text-[#5C7A68]">
+              <span>DATABASE CONNECTION</span>
+              <span className="text-[#059669] font-bold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#059669] animate-ping" />
+                LIVE
+              </span>
+            </div>
+            <div className="border-t border-[#F0EFEA] pt-2 space-y-1">
+              <div className="flex justify-between text-[#0D2B1A] font-bold">
+                <span>SKU ID:</span>
+                <span>AMX-500-AX342</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Medicine:</span>
+                <span className="text-[#0D2B1A] font-bold">Amoxicillin 500mg</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Distributor:</span>
+                <span className="text-[#0D2B1A] font-bold">Cipla Ltd</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Initial Expiry:</span>
+                <span className="text-[#0D2B1A] font-bold">120 Days to Expiry</span>
+              </div>
+            </div>
+          </div>
+        );
+      case 1:
+        return (
+          <div className="bg-white border border-[#D9DDD5] rounded-2xl p-4 shadow-sm font-mono text-[10px] space-y-3 text-left">
+            <div className="flex justify-between items-center text-rose-600 font-bold">
+              <span>SURPLUS RISK ALERT</span>
+              <span>CRITICAL</span>
+            </div>
+            <div className="border-t border-[#F0EFEA] pt-2 grid grid-cols-2 gap-3">
+              <div className="bg-rose-50 border border-rose-100 rounded-lg p-2 text-center">
+                <span className="text-[7px] text-[#5C7A68] uppercase block">Regional Demand</span>
+                <span className="text-xs font-black text-rose-600 font-sans">-45%</span>
+              </div>
+              <div className="bg-rose-50 border border-rose-100 rounded-lg p-2 text-center">
+                <span className="text-[7px] text-[#5C7A68] uppercase block">Expiry Risk</span>
+                <span className="text-xs font-black text-rose-600 font-sans">92%</span>
+              </div>
+            </div>
+            <div className="text-[9px] text-[#5C7A68]">
+              *Local sales velocity indicates batch cannot clear before expiration.
+            </div>
+          </div>
+        );
+      case 2:
+        return (
+          <div className="bg-white border border-[#D9DDD5] rounded-2xl p-4 shadow-sm font-mono text-[10px] space-y-2 text-left">
+            <div className="flex justify-between items-center text-[#7C3AED] font-bold">
+              <span>ENGINE SCORING PIPELINE</span>
+              <span className="animate-pulse text-xs">SCORING...</span>
+            </div>
+            <div className="border-t border-[#F0EFEA] pt-2 space-y-1.5">
+              <div className="flex items-center justify-between text-yellow-600 font-bold">
+                <span>Option 1: Return SLA</span>
+                <span>Evaluating...</span>
+              </div>
+              <div className="flex items-center justify-between text-yellow-600 font-bold">
+                <span>Option 2: Branch Transfer</span>
+                <span>Evaluating...</span>
+              </div>
+              <div className="flex items-center justify-between text-[#7C3AED] font-bold">
+                <span>Option 3: CSR Donation</span>
+                <span>Pending</span>
+              </div>
+            </div>
+          </div>
+        );
+      case 3:
+        return (
+          <div className="bg-white border border-[#D9DDD5] rounded-2xl p-4 shadow-sm font-mono text-[10px] space-y-2.5 text-left">
+            <div className="flex justify-between items-center text-[#F59E0B] font-bold">
+              <span>PATHWAY SCOREBOARD</span>
+              <span>RESOLVED</span>
+            </div>
+            <div className="border-t border-[#F0EFEA] pt-2 space-y-2">
+              <div className="bg-[#E6F4EA] border border-[#A7F3D0] rounded-xl p-2 flex justify-between items-center text-[#0F5132] font-bold">
+                <span>Transfer to Branch C</span>
+                <span>₹1,50,000 (100%)</span>
+              </div>
+              <div className="border border-[#D9DDD5] rounded-xl p-2 flex justify-between items-center text-[#5C7A68]">
+                <span>Distributor Return</span>
+                <span>₹1,20,000 (80%)</span>
+              </div>
+              <div className="border border-[#D9DDD5] rounded-xl p-2 flex justify-between items-center text-[#5C7A68]">
+                <span>CSR Donation Offset</span>
+                <span>₹45,000 (30%)</span>
+              </div>
+            </div>
+          </div>
+        );
+      case 4:
+        return (
+          <div className="bg-white border border-[#D9DDD5] rounded-2xl p-4 shadow-sm font-mono text-[10px] space-y-3 text-left">
+            <div className="flex justify-between items-center text-[#10B981] font-bold">
+              <span>RECOMMENDED OUTCOME</span>
+              <span>OPTIMIZED</span>
+            </div>
+            <div className="border-t border-[#F0EFEA] pt-2 flex items-center justify-between bg-emerald-50/50 rounded-xl p-3 border border-emerald-100/50">
+              <div className="text-center flex-1">
+                <span className="text-[7px] text-[#5C7A68] block">Surplus Branch</span>
+                <span className="font-extrabold text-[#0D2B1A] text-[9px] truncate block">Branch A (Delhi)</span>
+              </div>
+              <div className="px-2 text-center text-[#059669] flex items-center justify-center">
+                <ArrowRight className="w-4 h-4 animate-pulse" />
+              </div>
+              <div className="text-center flex-1">
+                <span className="text-[7px] text-[#5C7A68] block">Shortage Hub</span>
+                <span className="font-extrabold text-[#0D2B1A] text-[9px] truncate block">Branch C (Mumbai)</span>
+              </div>
+            </div>
+            <div className="flex justify-between text-[#0D2B1A] font-bold text-[9px] px-1">
+              <span>Margin Preserved:</span>
+              <span className="text-[#059669]">100% (₹1,50,000 saved)</span>
+            </div>
+          </div>
+        );
+      case 5:
+        return (
+          <div className="bg-white border border-[#D9DDD5] rounded-2xl p-4 shadow-sm font-mono text-[10px] space-y-3 text-left">
+            <div className="flex justify-between items-center text-[#B45309] font-bold">
+              <span>MANIFEST & DISPATCH</span>
+              <span>READY</span>
+            </div>
+            <div className="border-t border-[#F0EFEA] pt-2 space-y-2">
+              <div className="flex justify-between text-[9px]">
+                <span>Manifest File:</span>
+                <span className="font-bold text-[#0D2B1A]">MNF-AX342.pdf</span>
+              </div>
+              <div className="flex justify-between text-[9px]">
+                <span>Logistic Carrier:</span>
+                <span className="font-bold text-[#0D2B1A]">Cipla Logistics</span>
+              </div>
+              <div className="w-full bg-[#059669] text-white font-sans text-xs font-bold py-2 rounded-lg text-center cursor-default shadow-sm border border-[#047857]">
+                Confirm Route Dispatch
+              </div>
+            </div>
+          </div>
+        );
+      case 6:
+        return (
+          <div className="bg-white border border-[#D9DDD5] rounded-2xl p-4 shadow-sm font-mono text-[10px] space-y-3 text-left">
+            <div className="flex justify-between items-center text-[#DB2777] font-bold">
+              <span>COMPLIANCE LEDGER</span>
+              <span>COMPLETED</span>
+            </div>
+            <div className="border-t border-[#F0EFEA] pt-2 space-y-2">
+              <div className="bg-[#FAF9F6] border border-[#D9DDD5] rounded-xl p-2 space-y-1 text-[8px]">
+                <div className="flex justify-between">
+                  <span>Hashed Block:</span>
+                  <span className="font-bold text-[#0D2B1A]">#948123-AMX</span>
+                </div>
+                <div className="truncate">
+                  <span>SHA-256:</span>
+                  <span className="text-[#DB2777] font-bold ml-1">0x8f7c9e2b10a...</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-[#059669] font-bold font-sans">
+                <Shield className="w-3.5 h-3.5" />
+                <span>CDSCO Schedule M Sealed</span>
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  }
+
+  // Helper to render visual widgets in step cards (Section 3)
+  function renderPipelineWidget(idx: number) {
+    switch (idx) {
+      case 0:
+        return (
+          <div className="my-4 bg-[#F7F6F3] rounded-xl p-3 border border-[#D9DDD5] font-mono text-[9px] text-[#5C7A68] space-y-1.5 text-left">
+            <div className="flex justify-between items-center border-b pb-1 border-[#D9DDD5]/60">
+              <span>API CONNECTION</span>
+              <span className="text-[#059669] flex items-center gap-1 font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#059669] animate-ping" />
+                SYNCED
+              </span>
+            </div>
+            <div className="flex justify-between text-[#0D2B1A] font-bold">
+              <span>PMS Database</span>
+              <span>100% OK</span>
+            </div>
+            <div className="flex justify-between text-[#0D2B1A] font-bold">
+              <span>ERP Catalog</span>
+              <span>100% OK</span>
+            </div>
+          </div>
+        );
+      case 1:
+        return (
+          <div className="my-4 bg-[#F7F6F3] rounded-xl p-3 border border-[#D9DDD5] font-mono text-[9px] text-[#5C7A68] space-y-2 text-left">
+            <div className="flex justify-between items-center">
+              <span>EXPIRY SLIDER</span>
+              <span className="text-rose-500 font-bold">WARNING</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-1.5 relative overflow-hidden">
+              <div className="bg-gradient-to-r from-[#059669] via-yellow-400 to-rose-500 h-full w-[80%]" />
+            </div>
+            <div className="flex justify-between text-[#0D2B1A] font-bold text-[8px]">
+              <span>Intake (d0)</span>
+              <span className="text-rose-600">Risk zone (d90)</span>
+            </div>
+          </div>
+        );
+      case 2:
+        return (
+          <div className="my-4 bg-[#F7F6F3] rounded-xl p-3 border border-[#D9DDD5] font-mono text-[8px] text-[#5C7A68] space-y-1 text-left">
+            <div className="border-b pb-1 border-[#D9DDD5]/60 font-bold">SCORING ENGINE</div>
+            <div className="flex justify-between items-center text-[#059669] font-bold">
+              <span>✓ Branch Transfer</span>
+              <span>95/100</span>
+            </div>
+            <div className="flex justify-between items-center text-[#5C7A68] opacity-75">
+              <span>✓ Return SLA</span>
+              <span>82/100</span>
+            </div>
+            <div className="flex justify-between items-center text-[#5C7A68] opacity-75">
+              <span>✓ CSR Donation</span>
+              <span>34/100</span>
+            </div>
+          </div>
+        );
+      case 3:
+        return (
+          <div className="my-4 bg-[#F7F6F3] rounded-xl p-3 border border-[#D9DDD5] flex flex-col items-center justify-center space-y-2 py-4">
+            <div className="bg-[#059669] text-white text-[9px] font-mono font-bold px-3 py-1.5 rounded-lg shadow-sm border border-[#047857] w-full text-center select-none cursor-default">
+              Approve Route
+            </div>
+            <span className="font-mono text-[8px] text-[#5C7A68]">Manifest ready</span>
+          </div>
+        );
+      case 4:
+        return (
+          <div className="my-4 bg-[#F7F6F3] rounded-xl p-3 border border-[#D9DDD5] font-mono text-[8px] text-[#5C7A68] space-y-1 text-left">
+            <div className="flex justify-between items-center border-b pb-1 border-[#D9DDD5]/60">
+              <span>COMPLIANCE LEDGER</span>
+              <span className="text-[#059669] font-bold">SECURED</span>
+            </div>
+            <div className="truncate text-[#0D2B1A]">SHA-256: 0x4f8e...bd2</div>
+            <div className="text-[#059669] font-bold">✓ CDSCO Schedule M</div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  }
+
+  // Helper to render visual widgets in differentiation cards (Section 5)
+  function renderDifferentiationWidget(idx: number) {
+    switch (idx) {
+      case 0:
+        return (
+          <div className="my-4 bg-[#F7F6F3] rounded-xl p-3 border border-[#D9DDD5] font-mono text-[9px] text-[#5C7A68] space-y-2 text-left">
+            <div className="flex justify-between items-center">
+              <span>TIMELINE TRACKER</span>
+              <span className="text-[#059669] font-bold">ACTIVE</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="flex-1 bg-[#059669] text-white text-[8px] p-1 rounded text-center">90 Days</div>
+              <div className="flex-1 bg-yellow-400 text-[#0D2B1A] text-[8px] p-1 rounded text-center">60 Days</div>
+              <div className="flex-1 bg-rose-500 text-white text-[8px] p-1 rounded text-center">30 Days</div>
+            </div>
+            <div className="text-[8px] text-[#5C7A68]">
+              ✓ Expiry warnings flagged 90+ days in advance.
+            </div>
+          </div>
+        );
+      case 1:
+        return (
+          <div className="my-4 bg-[#F7F6F3] rounded-xl p-3 border border-[#D9DDD5] font-mono text-[8px] text-[#5C7A68] space-y-1.5 text-left">
+            <div className="flex justify-between items-center">
+              <span>PATHWAY SCORE</span>
+              <span className="text-[#7C3AED] font-bold">OPTIMIZED</span>
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between text-[#059669] font-bold">
+                <span>Transfer Margin</span>
+                <span>100% Value</span>
+              </div>
+              <div className="flex justify-between text-[#5C7A68]">
+                <span>Return SLA Credit</span>
+                <span>80% Value</span>
+              </div>
+            </div>
+          </div>
+        );
+      case 2:
+        return (
+          <div className="my-4 bg-[#F7F6F3] rounded-xl p-3 border border-[#D9DDD5] font-mono text-[8px] text-[#5C7A68] space-y-1.5 text-left">
+            <div className="flex justify-between items-center">
+              <span>CAPTURED VALUES</span>
+              <span className="text-[#059669] font-bold">COMPLETED</span>
+            </div>
+            <div className="space-y-1 text-left">
+              <div className="text-[#0D2B1A] font-bold">✓ Courier Picked Up</div>
+              <div className="text-[#0D2B1A] font-bold">✓ CDSCO Ledger Hashed</div>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  }
 
   return (
-    <div className="flex flex-col bg-[#FAFAF8]">
-
-      {/* ── HERO ────────────────────────────────────────────── */}
-      <section className="pt-24 pb-0 bg-white border-b border-[#E8E5DF]">
-        <div className="container-tight text-center max-w-[680px] mx-auto pb-12">
-          <span className="label-tag mb-5 inline-flex">How It Works</span>
-          <h1 className="display-lg mb-5">
-            Five steps from<br />
-            <span className="text-gradient-green">intake to outcome.</span>
+    <div className="flex flex-col bg-[#F7F6F3] min-h-screen text-[#0D2B1A]">
+      
+      {/* ─── SECTION 1: HERO ─── */}
+      <section className="pt-32 pb-20 bg-white border-b border-[#D9DDD5] relative overflow-hidden">
+        <div className="container-tight text-center max-w-[800px] mx-auto px-6">
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#059669] bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 mb-6">
+            Platform Science
+          </span>
+          <h1 className="text-4xl sm:text-5xl font-black text-[#0D2B1A] leading-[1.15] tracking-tight">
+            The Science of Medicine<br />
+            <span className="text-[#059669]">Lifecycle Intelligence.</span>
           </h1>
-          <p className="text-[1.05rem] text-[#6B7280] leading-relaxed mb-10">
-            VIALA is a continuous intelligence loop — not a one-time scan. Here&apos;s exactly what happens inside the platform.
+          <p className="mt-6 text-sm sm:text-base text-[#5C7A68] leading-relaxed max-w-[620px] mx-auto">
+            VIALA continuously monitors medicine inventory, identifies risk, evaluates recovery opportunities, and recommends the most appropriate outcome before value is lost.
           </p>
-
-          {/* Animated horizontal flow diagram */}
-          <div className="flex items-center justify-center gap-0 overflow-x-auto pt-4 pb-6 px-2 -mt-4">
-            {FLOW_NODES.map((node, i) => (
-              <div key={i} className="flex items-center">
-                <motion.div
-                  className="flex flex-col items-center gap-2 cursor-pointer px-2"
-                  onClick={() => setActiveNode(i)}
-                  animate={{ scale: activeNode === i ? 1.1 : 1 }}
-                  transition={{ type: 'spring', stiffness: 300 }}
-                >
-                  <motion.div
-                    className="w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all"
-                    animate={{
-                      background: activeNode === i ? node.color : '#FFFFFF',
-                      borderColor: activeNode === i ? node.color : '#E8E5DF',
-                      boxShadow: activeNode === i ? `0 0 0 6px ${node.color}20` : 'none',
-                    }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <node.icon className="w-5 h-5" style={{ color: activeNode === i ? '#FFFFFF' : node.color }} />
-                  </motion.div>
-                  <span className="text-[10px] font-bold text-center whitespace-pre-line leading-tight"
-                    style={{ color: activeNode === i ? node.color : '#9CA3AF' }}>
-                    {node.label}
-                  </span>
-                </motion.div>
-                {i < FLOW_NODES.length - 1 && (
-                  <motion.div
-                    className="w-8 h-px mx-1 flex-shrink-0"
-                    animate={{ background: activeNode > i ? '#059669' : '#E8E5DF' }}
-                    transition={{ duration: 0.5 }}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
-      {/* ── METRICS STRIP ───────────────────────────────────── */}
-      <section className="py-6 bg-[#0A0A0A] border-b border-[#1F2937]">
-        <div className="container-tight grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
-          {[
-            { val: '₹2.4M+', label: 'Value Recovered Monthly' },
-            { val: '18,500', label: 'Units Saved from Waste' },
-            { val: '94%', label: 'Waste Eliminated' },
-            { val: '6 min', label: 'Avg. Decision Time' },
-          ].map(s => (
-            <div key={s.label}>
-              <div className="text-2xl font-black text-[#34D399]">
-                <StatCounter value={s.val} />
-              </div>
-              <div className="text-[11px] text-[#64748B] mt-1">{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── STEP-BY-STEP WALKTHROUGH ─────────────────────────── */}
-      <section className="py-20 bg-[#FAFAF8]">
-        <div className="container-tight space-y-24">
-          {STEPS.map((step, i) => {
-            const MockComponent = step.mock;
-            const isEven = i % 2 === 0;
-            return (
-              <motion.div
-                key={step.number}
-                initial={{ opacity: 0, y: 32 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-80px' }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
-                className={`grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center ${!isEven ? 'lg:[&>*:first-child]:order-2' : ''}`}
-              >
-                {/* Explanation */}
-                <div>
-                  <div className="flex items-center gap-3 mb-5">
-                    <span className="font-mono text-2xl font-black tracking-tighter leading-none" style={{ color: step.color }}>{step.number}</span>
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${step.color}15` }}>
-                      <step.icon className="w-5 h-5" style={{ color: step.color }} />
-                    </div>
-                    <div className="h-px flex-1" style={{ background: `${step.color}30` }} />
-                  </div>
-                  <h2 className="text-2xl font-extrabold text-[#0F172A] mb-2 tracking-tight" style={{ fontFamily: 'var(--font-jakarta)' }}>
-                    {step.title}
-                  </h2>
-                  <p className="text-base font-semibold text-[#374151] mb-3">{step.sub}</p>
-                  <p className="text-sm text-[#6B7280] leading-relaxed mb-5">{step.desc}</p>
-                  <div
-                    className="inline-flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-full"
-                    style={{ background: `${step.color}15`, color: step.color }}
-                  >
-                    <step.icon className="w-3.5 h-3.5" />
-                    {step.callout}
-                  </div>
-                </div>
-
-                {/* Product mock */}
-                <div className="relative">
-                  {/* Glow effect */}
-                  <div
-                    className="absolute -inset-4 rounded-3xl opacity-20 blur-2xl pointer-events-none"
-                    style={{ background: `radial-gradient(circle, ${step.color}, transparent 70%)` }}
-                  />
-                  <MockComponent />
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* ── ARCHITECTURE SECTION ─────────────────────────────── */}
-      <section className="py-20 bg-white border-t border-[#E8E5DF]">
-        <div className="container-tight">
-          <div className="text-center mb-12">
-            <span className="label-tag mb-4 inline-flex">Platform Architecture</span>
-            <h2 className="display-md mb-3">Built around three engines.</h2>
-            <p className="text-[#6B7280] text-sm max-w-[480px] mx-auto">
-              Each engine handles a distinct layer of intelligence — together they form a continuous, closed-loop system.
+      {/* ─── SECTION 2: FOLLOW ONE MEDICINE THROUGH VIALA (INTERACTIVE CENTERPIECE) ─── */}
+      <section className="py-24 bg-white border-b border-[#D9DDD5]">
+        <div className="container-tight max-w-[1000px] mx-auto px-6">
+          
+          <div className="text-center max-w-[600px] mx-auto mb-16">
+            <span className="text-[10px] font-mono font-bold text-[#5C7A68] uppercase tracking-[0.2em] block mb-2">Simulated Lifecycle Journey</span>
+            <h2 className="text-3xl font-extrabold tracking-tight text-[#0D2B1A]">
+              Follow One Medicine Through VIALA
+            </h2>
+            <p className="mt-3 text-sm text-[#5C7A68] leading-relaxed">
+              Click through the stages below to trace how a batch of Amoxicillin moves from active risk to a successful financial recovery.
             </p>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            { [
-              {
-                title: 'Lifecycle Engine',
-                desc: 'Continuously monitors every medicine batch — tracking expiry, velocity, vendor windows, and demand signals in real-time.',
-                icon: Brain, color: '#2563EB',
-                features: ['90-second sync cycle', 'Risk scoring per SKU', 'Multi-branch visibility', 'Vendor window tracking'],
-                image: '/images/lifecycle_engine.png',
-              },
-              {
-                title: 'Decision Engine',
-                desc: 'Evaluates all six possible recovery outcomes for each at-risk batch and selects the highest-value action automatically.',
-                icon: Zap, color: '#7C3AED',
-                features: ['6 outcomes evaluated', '96% avg confidence', '<6 min decision time', 'Compliance-aware routing'],
-                image: '/images/decision_engine.png',
-              },
-              {
-                title: 'Mission Control',
-                desc: 'Translates AI recommendations into a prioritised action queue that staff can execute in one click — no expertise required.',
-                icon: Flag, color: '#B45309',
-                features: ['Priority-sorted queue', 'One-click approval', '70% less decision fatigue', 'Full audit trail'],
-                image: '/images/mission_control.png',
-              },
-            ].map((e, i) => (
-              <FlipCard key={e.title} e={e} i={i} />
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* ── BEFORE VS AFTER ──────────────────────────────────── */}
-      <section className="py-20 bg-[#FAFAF8] border-t border-[#E8E5DF]">
-        <div className="container-tight max-w-[860px]">
-          <div className="text-center mb-12">
-            <span className="label-tag mb-4 inline-flex">The Difference</span>
-            <h2 className="display-md">Traditional operations vs. VIALA.</h2>
-          </div>
-          <div className="rounded-2xl border border-[#E8E5DF] overflow-hidden shadow-sm">
-            {/* Header */}
-            <div className="grid grid-cols-3 border-b border-[#E8E5DF]">
-              <div className="p-6 text-xs font-bold text-[#717171] uppercase tracking-wider bg-[#F8F7F5] flex items-center">
-                Strategic Area
-              </div>
-              <div className="p-6 text-center bg-[#FFF5F5] border-l border-[#E8E5DF] flex flex-col items-center justify-center gap-2">
-                <span className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider">Traditional Systems</span>
-                <div className="flex items-center gap-1.5 flex-wrap justify-center opacity-75">
-                  <span className="text-[9px] font-extrabold px-2 py-0.5 rounded bg-white border border-[#FCA5A5] text-[#008fD3] shadow-xs">SAP</span>
-                  <span className="text-[9px] font-extrabold px-2 py-0.5 rounded bg-white border border-[#FCA5A5] text-[#F21905] shadow-xs">ORACLE</span>
-                  <span className="text-[9px] font-extrabold px-2 py-0.5 rounded bg-white border border-[#FCA5A5] text-[#107C41] shadow-xs">EXCEL</span>
-                  <span className="text-[9px] font-extrabold px-2 py-0.5 rounded bg-white border border-[#FCA5A5] text-[#E30613] shadow-xs">EPIC</span>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+            
+            {/* Left Column: Interactive Stepper (Vertical Timeline) */}
+            <div className="lg:col-span-5 space-y-3">
+              {JOURNEY_STAGES.map((stage, idx) => {
+                const isActive = activeJourneyIdx === idx;
+                const Icon = stage.icon;
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveJourneyIdx(idx)}
+                    className={`w-full text-left p-4 rounded-xl border transition-all duration-200 flex items-center gap-4 ${
+                      isActive
+                        ? 'bg-[#0D2B1A] border-[#0D2B1A] text-white shadow-md translate-x-2'
+                        : 'bg-[#F7F6F3] border-[#D9DDD5] text-[#5C7A68] hover:bg-white hover:border-[#059669]/30'
+                    }`}
+                  >
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all duration-200 ${
+                        isActive ? 'bg-[#059669] border-[#059669] text-white' : 'bg-white border-[#D9DDD5] text-[#5C7A68]'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-[8px] font-mono uppercase tracking-widest block opacity-70">Stage 0{idx + 1}</span>
+                      <span className="text-xs font-bold block">{stage.label}</span>
+                    </div>
+                    <ChevronRight className={`w-4 h-4 ml-auto transition-transform ${isActive ? 'rotate-90 text-[#34D399]' : 'opacity-30'}`} />
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Right Column: Visual Stage Sandbox */}
+            <div className="lg:col-span-7 h-full">
+              <div className="bg-[#F7F6F3] border border-[#D9DDD5] rounded-3xl p-6 sm:p-8 relative h-full flex flex-col justify-between shadow-sm min-h-[500px]">
+                
+                {/* Visual Glow Layer */}
+                <div
+                  className="absolute -inset-4 rounded-3xl opacity-10 blur-3xl pointer-events-none transition-all duration-500"
+                  style={{ background: `radial-gradient(circle, ${currentJourney.color}, transparent 60%)` }}
+                />
+
+                <div className="relative z-10 flex flex-col justify-between h-full space-y-6 flex-1">
+                  
+                  {/* Top content */}
+                  <div>
+                    {/* Card Header */}
+                    <div className="flex items-center justify-between border-b pb-4 border-[#D9DDD5] mb-4">
+                      <div>
+                        <span className="text-[9px] font-mono font-bold text-[#5C7A68] uppercase block">ACTIVE BATCH PIPELINE</span>
+                        <span className="text-xs font-bold text-[#0D2B1A]">{currentJourney.stage}</span>
+                      </div>
+                      <span
+                        className="text-[9px] font-mono font-bold text-white px-2.5 py-1 rounded"
+                        style={{ backgroundColor: currentJourney.color }}
+                      >
+                        {currentJourney.badge}
+                      </span>
+                    </div>
+
+                    {/* Stage Headline */}
+                    <div className="space-y-1 mb-4">
+                      <h3 className="text-lg sm:text-xl font-extrabold text-[#0D2B1A] leading-tight">
+                        {currentJourney.title}
+                      </h3>
+                      <p className="text-xs text-[#059669] font-semibold font-mono">
+                        {currentJourney.meta}
+                      </p>
+                    </div>
+
+                    {/* Stage Visual Widget Rendering */}
+                    <div className="my-4">
+                      {renderJourneyVisual(activeJourneyIdx)}
+                    </div>
+                  </div>
+
+                  {/* Middle content: Full detailed description to fill empty space */}
+                  <div className="flex-1 flex items-center py-2">
+                    <p className="text-xs sm:text-sm text-[#5C7A68] leading-relaxed">
+                      {currentJourney.detail}
+                    </p>
+                  </div>
+
+                  {/* Bottom content: Simulated Device Status */}
+                  <div className="relative z-10 pt-4 border-t border-[#D9DDD5] flex justify-between items-center text-[10px] font-mono mt-auto">
+                    <span className="text-[#5C7A68] uppercase">PROCESS STATE:</span>
+                    <span className="font-bold text-[#0D2B1A]" style={{ color: currentJourney.color }}>
+                      {currentJourney.stateLabel}
+                    </span>
+                  </div>
+
                 </div>
-              </div>
-              <div className="p-6 text-center bg-[#F0FDF4] border-l border-[#E8E5DF] flex flex-col items-center justify-center gap-1.5" style={{ color: '#059669' }}>
-                <span className="text-xs font-black uppercase tracking-wider text-emerald-800">With VIALA</span>
-                <div className="flex items-center gap-1 bg-white border border-emerald-200 px-2 py-0.5 rounded-full shadow-xs">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[8px] font-extrabold uppercase tracking-widest text-emerald-700">Autonomous AI</span>
-                </div>
+
               </div>
             </div>
-            {[
-              ['Inventory Visibility', 'Monthly manual audits', 'Real-time across all branches'],
-              ['Expiry Detection', 'Discovered at disposal', 'Flagged 90 days in advance'],
-              ['Decision Making', 'Manual, experience-based', 'AI-ranked, confidence-scored'],
-              ['Vendor Returns', 'Missed windows', 'Auto-tracked, auto-submitted'],
-              ['Compliance Docs', 'Manual paperwork', 'Auto-generated & digitally signed'],
-              ['Waste Write-offs', '8–12% annually', '<1% with active routing'],
-            ].map(([area, before, after], i) => (
-              <div
-                key={area}
-                className="grid grid-cols-3 border-b last:border-0"
-                style={{ borderColor: '#F0EDE8', background: i % 2 === 0 ? '#FFFFFF' : '#FDFDFC' }}
-              >
-                <div className="p-4 text-sm font-semibold text-[#374151]">{area}</div>
-                <div className="p-4 text-sm text-[#EF4444] text-center border-l border-[#F0EDE8] bg-[#FFFAFA]">
-                  <span className="flex items-center justify-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#EF4444] flex-shrink-0" />
-                    {before}
-                  </span>
-                </div>
-                <div className="p-4 text-sm text-center border-l border-[#F0EDE8] bg-[#FAFFFE]" style={{ color: '#059669' }}>
-                  <span className="flex items-center justify-center gap-1.5">
-                    <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                    {after}
-                  </span>
-                </div>
-              </div>
-            ))}
+
           </div>
+
         </div>
       </section>
 
-      {/* ── ENTERPRISE TRUST ────────────────────────────────── */}
-      <section className="py-16 bg-white border-t border-[#E8E5DF]">
-        <div className="container-tight">
-          <div className="text-center mb-10">
-            <span className="label-tag mb-4 inline-flex">Enterprise Grade</span>
-            <h2 className="text-2xl font-extrabold text-[#0F172A]" style={{ fontFamily: 'var(--font-jakarta)' }}>
-              Built for compliance from day one.
+      {/* ─── SECTION 3: PIPELINE / MODERN HORIZONTAL TIMELINE ─── */}
+      <section className="py-24 bg-[#FAF9F6] border-b border-[#D9DDD5]">
+        <div className="container-tight max-w-[1100px] mx-auto px-6">
+          
+          <div className="text-center max-w-[600px] mx-auto mb-20">
+            <span className="text-[10px] font-mono font-bold text-[#5C7A68] uppercase tracking-[0.2em] block mb-2">Automated Operations</span>
+            <h2 className="text-3xl font-extrabold tracking-tight text-[#0D2B1A]">
+              The Intelligence Pipeline
             </h2>
+            <p className="mt-3 text-sm text-[#5C7A68] leading-relaxed">
+              VIALA automates the full recovery lifecycle, converting manual tracking into structured digital decisions.
+            </p>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { icon: Shield, title: 'Schedule M / H', desc: 'Full CDSCO compliance built into every workflow', color: '#059669' },
-              { icon: Lock, title: 'SOC 2 Ready', desc: 'Encrypted audit trails with SHA-256 signatures', color: '#2563EB' },
-              { icon: Users, title: 'Role-Based Access', desc: 'Granular permissions per user, branch, and function', color: '#7C3AED' },
-              { icon: Activity, title: 'Live Audit Logs', desc: 'Every action timestamped and permanently sealed', color: '#B45309' },
-            ].map(t => (
-              <div key={t.title} className="rounded-xl border border-[#E8E5DF] p-5 hover:shadow-sm transition-shadow">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3" style={{ background: `${t.color}15` }}>
-                  <t.icon className="w-5 h-5" style={{ color: t.color }} />
+
+          {/* Timeline Wrapper */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 relative">
+            
+            {/* Connecting Horizontal Line (desktop) */}
+            <div className="hidden md:block absolute top-[28px] left-[5%] right-[5%] h-[1px] bg-dashed bg-[#D9DDD5] z-0" />
+
+            {PIPELINE_STEPS.map((step, idx) => {
+              const StepIcon = step.icon;
+              return (
+                <div key={idx} className="relative z-10 flex flex-col items-center md:items-start text-center md:text-left space-y-4">
+                  {/* Step Icon & Number */}
+                  <div className="flex items-center gap-3 md:flex-col md:items-start">
+                    <div className="w-14 h-14 rounded-full bg-white border border-[#D9DDD5] flex items-center justify-center shadow-sm relative group hover:border-[#059669] transition-colors duration-200">
+                      <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#0D2B1A] text-white font-mono text-[9px] flex items-center justify-center font-bold">
+                        {step.number}
+                      </span>
+                      <StepIcon className="w-5 h-5 text-[#059669]" />
+                    </div>
+                  </div>
+
+                  {/* Step Content Card */}
+                  <div className="space-y-3 bg-white border border-[#D9DDD5] rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200 w-full flex-1 flex flex-col justify-between">
+                    <h3 className="text-sm font-extrabold text-[#0D2B1A] border-b pb-2 border-[#F0EFEA]">{step.title}</h3>
+                    
+                    {/* Render Interactive Mini UI Widget instead of Paragraphs */}
+                    {renderPipelineWidget(idx)}
+
+                    {/* Short Benefit description (< 10 words) */}
+                    <p className="text-[11px] text-[#5C7A68] leading-relaxed mt-2 text-left">
+                      {step.benefit}
+                    </p>
+                  </div>
                 </div>
-                <h4 className="text-sm font-bold text-[#0F172A] mb-1">{t.title}</h4>
-                <p className="text-xs text-[#6B7280] leading-relaxed">{t.desc}</p>
-              </div>
-            ))}
+              );
+            })}
+
           </div>
+
         </div>
       </section>
 
-      {/* ── BOTTOM CTA ───────────────────────────────────────── */}
-      <section className="py-20 bg-[#0F172A]">
-        <div className="container-tight text-center max-w-[600px] mx-auto">
-          <div className="inline-flex items-center gap-2 text-sm font-semibold text-[#34D399] mb-6">
-            <Zap className="w-4 h-4" />
-            See a medicine move through VIALA in real time.
+      {/* ─── SECTION 4: THE DECISION LAYER ─── */}
+      <section className="py-24 bg-white border-b border-[#D9DDD5]">
+        <div className="container-tight max-w-[900px] mx-auto px-6 text-center">
+          
+          <div className="max-w-[620px] mx-auto mb-16">
+            <span className="text-[10px] font-mono font-bold text-[#5C7A68] uppercase tracking-[0.2em] block mb-2">Architectural Logic</span>
+            <h2 className="text-3xl font-extrabold tracking-tight text-[#0D2B1A]">
+              The Decision Layer
+            </h2>
+            <p className="mt-3 text-sm text-[#5C7A68] leading-relaxed">
+              VIALA automatically processes multiple inventory variables in real-time, removing complexity to suggest the single highest-value recovery outcome.
+            </p>
           </div>
-          <h2 className="text-3xl font-extrabold text-white mb-4" style={{ fontFamily: 'var(--font-jakarta)', letterSpacing: '-0.03em' }}>
-            From scan to recovery<br />in under 6 minutes.
+
+          {/* Decision Layer Visual Diagram */}
+          <div className="bg-[#F7F6F3] border border-[#D9DDD5] rounded-3xl p-8 relative overflow-hidden max-w-[750px] mx-auto shadow-sm">
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center relative z-10">
+              
+              {/* Inputs Column */}
+              <div className="space-y-3">
+                <span className="text-[9px] font-mono font-bold text-[#5C7A68] uppercase tracking-wider block text-left">Operational Inputs</span>
+                
+                {[
+                  { text: 'Inventory Signals', desc: 'Batch volumes, locations, cost bases' },
+                  { text: 'Vendor Policies', desc: 'Return credit percentage rules' },
+                  { text: 'Expiry Timelines', desc: 'Critical returns SLA dates' },
+                  { text: 'Demand Patterns', desc: 'Regional usage and branch deficits' },
+                  { text: 'Compliance Rules', desc: 'CDSCO Schedule M structures' }
+                ].map((input, idx) => (
+                  <div key={idx} className="bg-white border border-[#D9DDD5] rounded-xl p-3 text-left shadow-sm">
+                    <span className="text-xs font-bold text-[#0D2B1A] block">{input.text}</span>
+                    <span className="text-[10px] text-[#5C7A68] block">{input.desc}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Engine Column (Center) */}
+              <div className="flex flex-col items-center justify-center py-6">
+                
+                {/* Arrow down (mobile) / Arrow Right (desktop) indicators */}
+                <div className="block md:hidden mb-4"><ArrowDown className="w-5 h-5 text-[#5C7A68] animate-bounce" /></div>
+
+                <div className="w-20 h-20 rounded-2xl bg-[#0D2B1A] border border-[#059669] flex flex-col items-center justify-center shadow-lg relative group">
+                  <span className="absolute inset-1 rounded-xl border border-dashed border-[#059669] animate-[spin_25s_linear_infinite]" />
+                  <Layers className="w-7 h-7 text-[#34D399]" />
+                  <span className="text-[8px] font-mono font-bold text-[#34D399] uppercase tracking-widest mt-2">ENGINE</span>
+                </div>
+                
+                <h4 className="text-xs font-bold text-[#0D2B1A] mt-4">VIALA Lifecycle Engine</h4>
+                <p className="text-[10px] text-[#5C7A68] mt-1 max-w-[160px]">
+                  Parallel-scores all recovery pathways.
+                </p>
+
+                <div className="block md:hidden mt-4"><ArrowDown className="w-5 h-5 text-[#5C7A68] animate-bounce" /></div>
+              </div>
+
+              {/* Outputs Column */}
+              <div className="space-y-3">
+                <span className="text-[9px] font-mono font-bold text-[#5C7A68] uppercase tracking-wider block text-left">Resolution Output</span>
+                
+                <div className="bg-[#E6F4EA] border border-[#A7F3D0] rounded-xl p-4 text-left shadow-sm">
+                  <span className="w-2 h-2 rounded-full bg-[#059669] inline-block mr-1.5 animate-pulse" />
+                  <span className="text-xs font-mono font-bold text-[#0D2B1A] uppercase tracking-wider">Recommended Outcome</span>
+                  <p className="text-xs text-[#0F5132] mt-2 font-semibold">
+                    Return, Transfer, or Redistribution action compiled with pre-filled forms.
+                  </p>
+                </div>
+                
+                <div className="bg-white border border-[#D9DDD5] rounded-xl p-3 text-left opacity-60">
+                  <span className="text-xs font-bold text-[#5C7A68] block">Automated Dispatch</span>
+                  <span className="text-[10px] text-[#5C7A68] block">Warehouse notifications & couriers matched</span>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      {/* ─── SECTION 5: WHY TRADITIONAL SYSTEMS STOP AT VISIBILITY / WHY VIALA GOES FURTHER ─── */}
+      <section className="py-24 bg-[#F7F6F3] border-b border-[#D9DDD5]">
+        <div className="container-tight max-w-[1000px] mx-auto px-6 text-center">
+          
+          <div className="max-w-[620px] mx-auto mb-16">
+            <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#5C7A68] block mb-2 font-mono">DIFFERENTIATION</span>
+            <h2 className="text-3xl font-extrabold tracking-tight text-[#0D2B1A]">
+              Why Traditional Systems Stop At Visibility<br />
+              <span className="text-[#059669] font-bold">Why VIALA Goes Further</span>
+            </h2>
+            <p className="mt-3 text-sm text-[#5C7A68] leading-relaxed">
+              Standard ERPs track inventory levels, but leave recovery logistics and decision execution to manual pharmacist checks. VIALA closes the loop.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {DIFFERENTIATION_CARDS.map((card, idx) => (
+              <div key={idx} className="bg-white border border-[#D9DDD5] rounded-2xl p-6 sm:p-8 text-left shadow-sm hover:border-[#059669]/30 hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+                <div>
+                  <div className="text-[10px] font-mono font-bold text-[#059669] uppercase tracking-wider mb-4">0{idx + 1} | Core Edge</div>
+                  <h3 className="text-lg font-black text-[#0D2B1A] mb-3">{card.title}</h3>
+                  
+                  {/* Render Visual widget */}
+                  {renderDifferentiationWidget(idx)}
+                </div>
+
+                {/* Short benefit copy (< 10 words) */}
+                <p className="text-xs text-[#5C7A68] leading-relaxed mt-2">
+                  {card.benefit}
+                </p>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* ─── SECTION 6: ENTERPRISE TRUST LAYER ─── */}
+      <section className="py-20 bg-white border-b border-[#D9DDD5]">
+        <div className="container-tight max-w-[1000px] mx-auto px-6">
+          
+          <div className="text-center max-w-[600px] mx-auto mb-16">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#059669] bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 mb-3">
+              Trust & Compliance
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0D2B1A]">
+              Enterprise Trust Layer
+            </h2>
+            <p className="mt-3 text-sm text-[#5C7A68] leading-relaxed">
+              VIALA secures your inventory databases and keeps all recovery actions aligned with regulatory requirements.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { icon: Shield, title: 'CDSCO Schedule M Ready', desc: 'Pre-filled return manifests and audit-safe logs prepared for inspection.' },
+              { icon: Lock, title: 'HIPAA Aligned Shield', desc: 'Secure local databases with zero collection of patient-identifiable data (PII).' },
+              { icon: Users, title: 'Role-Based Control', desc: 'Clear authentication controls separating pharmacist actions from network manager settings.' },
+              { icon: Activity, title: 'Traceability Auditing', desc: 'Every transfer, return, and donation is cryptographically hashed in an immutable ledger.' }
+            ].map((item, idx) => (
+              <div key={idx} className="border border-[#D9DDD5] rounded-xl p-5 hover:border-[#059669]/20 hover:shadow-sm transition-all text-left bg-[#FAF9F6]">
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-[#059669] flex items-center justify-center mb-4 border border-emerald-100">
+                  <item.icon className="w-4 h-4" />
+                </div>
+                <h4 className="text-xs font-extrabold text-[#0D2B1A] mb-1.5">{item.title}</h4>
+                <p className="text-[11px] text-[#5C7A68] leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* ─── SECTION 7: BEYOND RECOVERY MISSION ─── */}
+      <section className="py-24 bg-[#FAF9F6] border-b border-[#D9DDD5]">
+        <div className="container-tight max-w-[850px] mx-auto px-6 grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+          
+          <div className="md:col-span-4 flex justify-center">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#059669] shadow-sm">
+              <Leaf className="w-8 h-8" />
+            </div>
+          </div>
+
+          <div className="md:col-span-8 space-y-4 text-left">
+            <span className="text-[9px] font-mono font-bold text-[#059669] uppercase tracking-wider">Our Core Mission</span>
+            <h3 className="text-xl sm:text-2xl font-black text-[#0D2B1A] leading-tight">Diverting Loss. Restoring Purpose.</h3>
+            <p className="text-xs text-[#5C7A68] leading-relaxed">
+              VIALA exists to ensure medicines have every reasonable opportunity to create value before becoming waste. By routing at-risk inventory to its highest-value recovery outcome, we optimize the utilization of manufactured healthcare resources, prevent premature waste disposal, and protect enterprise margins.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ─── SECTION 8: BOTTOM CTA ─── */}
+      <section className="py-24 bg-[#0B4D2E] text-white relative overflow-hidden text-center">
+        <div className="container-tight relative z-10 max-w-[650px] mx-auto px-6">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+            See How Much Value May Already Be Sitting In Your Inventory.
           </h2>
-          <p className="text-[#94A3B8] text-sm mb-8">
-            Our solutions engineers will run a live walkthrough using your actual product mix and show projected recoveries before you sign anything.
+          <p className="text-xs sm:text-sm text-white/70 leading-relaxed mt-6 max-w-[500px] mx-auto">
+            Schedule a solutions walkthrough. We will review your pharmacy branch write-off logs, check supplier returns eligibility terms, and map out your exact recovery potentials.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link
-              href="/get-started"
-              className="px-7 py-3.5 rounded-xl text-sm font-bold text-white transition-all hover:-translate-y-[1px] hover:shadow-xl"
-              style={{ background: '#059669' }}
-            >
-              Book a Live Demo <ArrowRight className="inline w-4 h-4 ml-1" />
+
+          <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Link href="/get-started" className="btn-accent justify-center px-8 py-3.5 shadow-lg w-full sm:w-auto">
+              Schedule Walkthrough
+              <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link
-              href="/outcomes"
-              className="px-7 py-3.5 rounded-xl text-sm font-bold text-[#CBD5E1] bg-[#1E293B] border border-[#334155] transition-all hover:bg-[#273549]"
-            >
-              See All 6 Outcomes <ChevronRight className="inline w-4 h-4 ml-0.5" />
+            <Link href="/get-started" className="btn-secondary text-white border-white/20 hover:border-white/50 hover:bg-white/5 justify-center px-8 py-3.5 w-full sm:w-auto">
+              Request Platform Assessment
             </Link>
           </div>
         </div>

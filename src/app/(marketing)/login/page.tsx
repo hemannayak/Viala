@@ -1,28 +1,54 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/providers/auth-provider';
-import { Lock, Mail, ArrowRight, CheckCircle, AlertTriangle } from 'lucide-react';
+import {
+  ArrowRight, AlertCircle, Loader2,
+  TrendingUp, RotateCcw, Shield,
+} from 'lucide-react';
 
+
+
+// ── Value Cards (Left Panel) ──────────────────────────────────────────────────
+const VALUE_CARDS = [
+  {
+    icon: TrendingUp,
+    title: 'Expiry Prevention',
+    desc: 'Identify at-risk inventory 60–90 days before losses occur.',
+  },
+  {
+    icon: RotateCcw,
+    title: 'Inventory Recovery',
+    desc: 'Automated returns, transfers, and redistribution pathways.',
+  },
+  {
+    icon: Shield,
+    title: 'Compliance Intelligence',
+    desc: 'Audit-ready documentation for every recovery action.',
+  },
+];
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function LoginPage() {
-  const [authMode, setAuthMode] = useState<'password' | 'magic-link'>('password');
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [isMagicLinkSent, setIsMagicLinkSent] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [errorMsg, setErrorMsg] = useState<string>('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const { signIn, signInWithGoogle } = useAuth();
+
+  const { signIn } = useAuth();
+
   const router = useRouter();
 
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
+  // ── Email / Password ──────────────────────────────────────────────────────
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
-    setIsLoading(true);
+    setLoading(true);
     setErrorMsg('');
+
     try {
       const res = await signIn(email, password);
       if (res?.error) {
@@ -30,195 +56,200 @@ export default function LoginPage() {
       } else {
         router.push('/dashboard');
       }
-    } catch (err: any) {
-      setErrorMsg(err.message || 'An unexpected error occurred');
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'An unexpected error occurred.');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    setErrorMsg('');
-    try {
-      const res = await signInWithGoogle();
-      if (res?.error) {
-        setErrorMsg(res.error);
-      } else {
-        router.push('/dashboard');
-      }
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Google Sign-In failed');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleMagicLinkSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      setIsMagicLinkSent(true);
-    }, 1200);
   };
 
   return (
-    <div className="flex min-h-[85vh] flex-col items-center justify-center bg-[#FAFAF8] py-12 px-4 sm:px-6 lg:px-8 w-full">
-      <div className="w-full max-w-md space-y-8 bg-white p-6 sm:p-10 rounded-2xl border border-[#E8E5DF] shadow-xl relative mx-auto">
-        
-        {/* Top brand ribbon */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500 rounded-t-2xl" />
+    <div className="min-h-[calc(100vh-68px)] flex flex-col lg:flex-row bg-[#F8FAF9]">
 
-        <div className="text-center">
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0F172A]" style={{ fontFamily: 'var(--font-jakarta)' }}>Sign in to VIALA</h2>
-          <p className="mt-2 text-xs text-[#717171]">
-            Enter your credentials or use Enterprise SSO options to sync.
+      {/* ── LEFT PANEL — Brand Story (desktop only) ── */}
+      <div className="hidden lg:flex lg:w-[45%] xl:w-[42%] flex-col justify-between bg-[#022C22] p-12 xl:p-16 relative overflow-hidden">
+
+        {/* Ambient Glow */}
+        <div
+          className="absolute top-0 left-0 w-[500px] h-[500px] pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse at 0% 0%, rgba(16,185,129,0.18) 0%, transparent 65%)' }}
+        />
+        <div
+          className="absolute bottom-0 right-0 w-[300px] h-[300px] pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse at 100% 100%, rgba(6,95,70,0.4) 0%, transparent 60%)' }}
+        />
+
+        {/* Abstract Data Grid — subtle background decoration */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.04]"
+          style={{
+            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.5) 39px, rgba(255,255,255,0.5) 40px), repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.5) 39px, rgba(255,255,255,0.5) 40px)',
+          }}
+        />
+
+        <div className="relative z-10">
+          {/* Headline */}
+          <div className="mb-10">
+            <h1 className="text-3xl xl:text-4xl font-black text-white leading-[1.2] tracking-tight mb-4">
+              Recover More<br />
+              <span className="text-[#34D399]">Than You Spend.</span>
+            </h1>
+            <p className="text-[14px] text-[#4A7A68] leading-relaxed max-w-[320px]">
+              Transform medicine lifecycle management into measurable recovery outcomes across your healthcare network.
+            </p>
+          </div>
+
+          {/* Value Cards */}
+          <div className="space-y-3">
+            {VALUE_CARDS.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="flex items-start gap-4 p-4 rounded-xl border border-[#0D3D2C] bg-[#031A13]">
+                <div className="w-8 h-8 rounded-lg bg-[#065F46] flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Icon className="w-3.5 h-3.5 text-[#34D399]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-white mb-0.5">{title}</p>
+                  <p className="text-[11px] text-[#4A7A68] leading-relaxed">{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom text */}
+        <div className="relative z-10 mt-10">
+          <p className="text-[10px] text-[#1E4030] font-mono">
+            VIALA Technologies Pvt. Ltd. · Healthcare Recovery Intelligence
           </p>
         </div>
+      </div>
 
-        {/* Error Message banner */}
-        {errorMsg && (
-          <div className="p-3 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs font-semibold flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
-            <span>{errorMsg}</span>
+      {/* ── RIGHT PANEL — Auth Card ── */}
+      <div className="flex-1 flex flex-col items-center justify-center px-5 sm:px-8 py-14 lg:py-0">
+
+
+        <div className="w-full max-w-[400px]">
+
+          <div className="mb-8">
+            <h2 className="text-2xl sm:text-3xl font-black text-[#0D2B1A] tracking-tight">
+              Sign in to VIALA
+            </h2>
+            <p className="mt-2 text-sm text-[#9CA3AF]">
+              Enterprise Healthcare Recovery Platform
+            </p>
           </div>
-        )}
 
-        {/* Auth Mode Toggle Tabs */}
-        <div className="flex bg-[#FAFAF8] border border-[#E8E5DF] rounded-xl p-1">
-          <button
-            onClick={() => { setAuthMode('password'); setIsMagicLinkSent(false); setErrorMsg(''); }}
-            className={`flex-1 py-2 rounded-lg text-xs font-bold text-center transition-all ${authMode === 'password' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#717171]'}`}
-          >
-            Password
-          </button>
-          <button
-            onClick={() => { setAuthMode('magic-link'); setIsMagicLinkSent(false); setErrorMsg(''); }}
-            className={`flex-1 py-2 rounded-lg text-xs font-bold text-center transition-all ${authMode === 'magic-link' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#717171]'}`}
-          >
-            Magic Link
-          </button>
-        </div>
+          {/* Error Banner */}
+          {errorMsg && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 mb-5"
+            >
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
 
-        {/* SSO Buttons */}
-        <div className="space-y-2.5">
-          <Button 
-            onClick={handleGoogleSignIn}
-            disabled={isLoading}
-            variant="outline" 
-            className="w-full bg-white text-[#0F172A] border-[#E8E5DF] hover:bg-[#FAFAF8] h-10 flex items-center justify-center gap-2 text-xs font-bold rounded-xl shadow-sm cursor-pointer"
-          >
-            <svg width="14" height="14" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-              <path d="M17.64 9.2045c0-.6381-.0573-1.2518-.1636-1.8409H9v3.4814h4.8436c-.2086 1.125-.8427 2.0782-1.7959 2.7164v2.2581h2.9086c1.7018-1.5668 2.6836-3.874 2.6836-6.615z" fill="#4285F4" />
-              <path d="M9 18c2.43 0 4.4673-.806 5.9564-2.1805l-2.9086-2.2581c-.8059.54-1.8368.859-3.0477.859-2.344 0-4.3282-1.5832-5.036-3.7105H.9574v2.3318C2.4382 15.9832 5.4818 18 9 18z" fill="#34A853" />
-              <path d="M3.964 10.71c-.18-.54-.2822-1.1168-.2822-1.71s.1023-1.17.2823-1.71V4.9582H.9573A8.9965 8.9965 0 000 9c0 1.4523.3477 2.8268.9573 4.0418L3.964 10.71z" fill="#FBBC05" />
-              <path d="M9 3.5795c1.3214 0 2.5077.4541 3.4405 1.346l2.5813-2.5814C13.4632.8918 11.426 0 9 0 5.4818 0 2.4382 2.0168.9573 4.9582L3.964 7.29C4.6718 5.1632 6.656 3.5795 9 3.5795z" fill="#EA4335" />
-            </svg>
-            {isLoading ? 'Connecting...' : 'Sign in with Google'}
-          </Button>
+          <div className="space-y-3 mb-5">
+            {/* Google — Coming Soon */}
+            <button
+              disabled
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 min-h-[44px] rounded-xl border border-[#E4E0D9] bg-[#FAFAF8] text-sm font-semibold text-[#C4BDB4] cursor-not-allowed shadow-sm"
+              title="Google Sign-In — coming soon"
+            >
+              <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true">
+                <path d="M17.64 9.2045c0-.6381-.0573-1.2518-.1636-1.8409H9v3.4814h4.8436c-.2086 1.125-.8427 2.0782-1.7959 2.7164v2.2581h2.9086c1.7018-1.5668 2.6836-3.874 2.6836-6.615z" fill="#4285F4" opacity="0.4"/>
+                <path d="M9 18c2.43 0 4.4673-.806 5.9564-2.1805l-2.9086-2.2581c-.8059.54-1.8368.859-3.0477.859-2.344 0-4.3282-1.5832-5.036-3.7105H.9574v2.3318C2.4382 15.9832 5.4818 18 9 18z" fill="#34A853" opacity="0.4"/>
+                <path d="M3.964 10.71c-.18-.54-.2822-1.1168-.2822-1.71s.1023-1.17.2823-1.71V4.9582H.9573A8.9965 8.9965 0 000 9c0 1.4523.3477 2.8268.9573 4.0418L3.964 10.71z" fill="#FBBC05" opacity="0.4"/>
+                <path d="M9 3.5795c1.3214 0 2.5077.4541 3.4405 1.346l2.5813-2.5814C13.4632.8918 11.426 0 9 0 5.4818 0 2.4382 2.0168.9573 4.9582L3.964 7.29C4.6718 5.1632 6.656 3.5795 9 3.5795z" fill="#EA4335" opacity="0.4"/>
+              </svg>
+              Continue with Google
+              <span className="ml-auto text-[9px] font-bold bg-[#F0EDE8] text-[#B0AA9F] px-1.5 py-0.5 rounded uppercase tracking-wide">Soon</span>
+            </button>
 
-          <Button 
-            disabled 
-            variant="outline" 
-            className="w-full bg-white text-[#9CA3AF] border-[#E8E5DF] h-10 flex items-center justify-center gap-2 text-xs font-bold rounded-xl shadow-sm opacity-50 cursor-not-allowed"
-          >
-            <svg width="14" height="14" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
-              <path d="M10 0H0V10H10V0Z" fill="#F25022"/>
-              <path d="M21 0H11V10H21V0Z" fill="#7FBA00"/>
-              <path d="M10 11H0V21H10V11Z" fill="#00A4EF"/>
-              <path d="M21 11H11V21H21V11Z" fill="#FFB900"/>
-            </svg>
-            Sign in with Microsoft
-          </Button>
-        </div>
-
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center" aria-hidden="true">
-            <div className="w-full border-t border-[#E8E5DF]" />
+            {/* Microsoft — Coming Soon */}
+            <button
+              disabled
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 min-h-[44px] rounded-xl border border-[#E4E0D9] bg-[#FAFAF8] text-sm font-semibold text-[#C4BDB4] cursor-not-allowed shadow-sm"
+              title="Microsoft SSO — coming soon"
+            >
+              <svg width="16" height="16" viewBox="0 0 21 21" aria-hidden="true">
+                <path d="M10 0H0V10H10V0Z" fill="#F25022" opacity="0.4"/>
+                <path d="M21 0H11V10H21V0Z" fill="#7FBA00" opacity="0.4"/>
+                <path d="M10 11H0V21H10V11Z" fill="#00A4EF" opacity="0.4"/>
+                <path d="M21 11H11V21H21V11Z" fill="#FFB900" opacity="0.4"/>
+              </svg>
+              Continue with Microsoft
+              <span className="ml-auto text-[9px] font-bold bg-[#F0EDE8] text-[#B0AA9F] px-1.5 py-0.5 rounded uppercase tracking-wide">Soon</span>
+            </button>
           </div>
-          <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-wider">
-            <span className="bg-white px-4 text-[#717171]">Or continue with email</span>
-          </div>
-        </div>
 
-        {/* PASSWORD FORM */}
-        {authMode === 'password' && (
-          <form className="space-y-4" onSubmit={handlePasswordSubmit}>
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center" aria-hidden="true">
+              <div className="w-full border-t border-[#E4E0D9]" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-[#F8FAF9] px-4 text-[11px] uppercase font-bold tracking-widest text-[#C4BDB4]">
+                or continue with email
+              </span>
+            </div>
+          </div>
+
+          {/* Email / Password Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-xs font-bold text-[#0F172A] uppercase tracking-wider mb-2">Work Email</label>
+              <label htmlFor="email" className="block text-[10px] font-bold uppercase tracking-wider text-[#525252] mb-2">
+                Work Email
+              </label>
               <input
                 id="email" type="email" required
-                value={email} onChange={(e) => setEmail(e.target.value)}
-                className="block w-full rounded-md border border-[#E8E5DF] bg-white px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none placeholder-[#B0ABAB]"
+                autoComplete="email" inputMode="email"
+                value={email} onChange={e => setEmail(e.target.value)}
                 placeholder="you@company.com"
+                className="w-full px-4 py-3 min-h-[44px] rounded-lg border border-[#E4E0D9] bg-white text-sm text-[#0D2B1A] focus:outline-none focus:ring-2 focus:ring-[#059669]/25 focus:border-[#059669] placeholder-[#C4BDB4]"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-xs font-bold text-[#0F172A] uppercase tracking-wider mb-2">Password</label>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="password" className="block text-[10px] font-bold uppercase tracking-wider text-[#525252]">
+                  Password
+                </label>
+                <a href="#" className="text-[10px] font-bold text-[#059669] hover:text-[#047857] hover:underline">
+                  Forgot password?
+                </a>
+              </div>
               <input
                 id="password" type="password" required
-                value={password} onChange={(e) => setPassword(e.target.value)}
-                className="block w-full rounded-md border border-[#E8E5DF] bg-white px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none placeholder-[#B0ABAB]"
-                placeholder="••••••••"
+                autoComplete="current-password"
+                value={password} onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••••"
+                className="w-full px-4 py-3 min-h-[44px] rounded-lg border border-[#E4E0D9] bg-white text-sm text-[#0D2B1A] focus:outline-none focus:ring-2 focus:ring-[#059669]/25 focus:border-[#059669] placeholder-[#C4BDB4]"
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center text-xs text-[#717171] cursor-pointer select-none">
-                <input id="remember-me" type="checkbox" className="h-3.5 w-3.5 rounded border-[#E8E5DF] text-emerald-600 focus:ring-emerald-500" />
-                <span className="ml-2">Remember me</span>
-              </label>
-              <a href="#" className="text-xs font-bold text-emerald-600 hover:underline">Forgot password?</a>
-            </div>
-
-            <Button 
-              type="submit" 
-              disabled={isLoading}
-              className="w-full bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-bold h-11 rounded-xl shadow-md transition-all cursor-pointer"
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2.5 py-3.5 min-h-[48px] rounded-xl bg-[#065F46] hover:bg-[#047857] text-white font-bold text-sm transition-all shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed mt-1"
             >
-              {isLoading ? 'Signing In...' : 'Sign In with Password'}
-            </Button>
+              {loading ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Signing in...</>
+              ) : (
+                <>Sign in <ArrowRight className="w-4 h-4" /></>
+              )}
+            </button>
           </form>
-        )}
 
-        {/* MAGIC LINK FORM */}
-        {authMode === 'magic-link' && (
-          <form className="space-y-4" onSubmit={handleMagicLinkSubmit}>
-            <div>
-              <label htmlFor="magic-email" className="block text-xs font-bold text-[#0F172A] uppercase tracking-wider mb-2">Work Email</label>
-              <input
-                id="magic-email" type="email" required
-                value={email} onChange={(e) => setEmail(e.target.value)}
-                className="block w-full rounded-md border border-[#E8E5DF] bg-white px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none placeholder-[#B0ABAB]"
-                placeholder="you@company.com"
-              />
-            </div>
-
-            {isMagicLinkSent && (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-medium flex items-center gap-2 animate-pulse">
-                <CheckCircle className="w-4 h-4 text-emerald-500" /> Check your email for secure Magic Link.
-              </div>
-            )}
-
-            <Button
-              type="submit" disabled={isLoading || isMagicLinkSent}
-              className="w-full bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-bold h-11 rounded-xl shadow-md transition-all flex justify-center items-center gap-2 cursor-pointer"
-            >
-              {isLoading && <span className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin inline-block" />}
-              {isMagicLinkSent ? 'Magic Link Sent' : 'Send Secure Magic Link'}
-            </Button>
-          </form>
-        )}
-
-        <p className="mt-8 text-center text-xs text-[#717171]">
-          Don&apos;t have an account?{' '}
-          <Link href="/get-started" className="font-bold text-emerald-600 hover:underline">
-            Contact sales
-          </Link>
-        </p>
+            <p className="mt-8 flex flex-col items-center gap-3">
+              <span className="text-[12px] text-[#9CA3AF]">
+                Don&apos;t have access?{' '}
+                <Link href="/get-started" className="font-bold text-[#059669] hover:underline">
+                  Book a Demo
+                </Link>
+              </span>
+            </p>
+        </div>
       </div>
     </div>
   );

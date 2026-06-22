@@ -110,10 +110,13 @@
   }
 
   html {
+    /* Use dvh/dvw for mobile browsers that have dynamic chrome (URL bar) */
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    /* Prevent horizontal scroll on narrow viewports */
+    overflow-x: hidden;
   }
 
   body {
@@ -122,6 +125,11 @@
     font-size: 16px;
     line-height: 1.6;
     font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+    /* Prevent horizontal overflow */
+    overflow-x: hidden;
+    /* Support iOS safe areas (notch / Dynamic Island / home indicator) */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -142,9 +150,67 @@
     color: inherit;
   }
 
+  /* Remove 300ms tap delay on touch devices */
+  button, a, [role="button"], input, select, textarea, label {
+    touch-action: manipulation;
+    cursor: pointer;
+  }
+
   button, a, [role="button"] {
     transition: all 0.15s ease;
-    cursor: pointer;
+  }
+
+  /* ── GLOBAL FOCUS RING (WCAG 2.4.7) ─── */
+  /* Visible, high-contrast focus indicator for keyboard navigation */
+  :where(a:any-link, button, input, select, textarea, [role="button"], [tabindex]):focus-visible {
+    outline: 2.5px solid #059669;
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  /* ── SKIP LINK (WCAG 2.4.1) ──────────── */
+  .skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.5rem;
+    background: #0B4D2E;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.875rem;
+    border-radius: 0 0 8px 8px;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  .skip-link:focus {
+    top: 0;
+  }
+
+  /* ── VISUALLY HIDDEN (screen-reader only) ── */
+  .visually-hidden:where(:not(:focus-within, :active)) {
+    position: absolute !important;
+    clip-path: inset(50%) !important;
+    overflow: hidden !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  /* ── REDUCED MOTION (WCAG 2.3.3) ──────── */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+    .animate-marquee {
+      animation: none !important;
+    }
   }
 
   /* Smooth scrollbar */
@@ -248,12 +314,14 @@
     transform: translateY(-2px);
   }
 
-  /* Buttons */
+  /* Buttons — all have min 44px height for WCAG touch target compliance */
   .btn-primary {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     padding: 12px 24px;
+    min-height: 44px;
     background: var(--viala-green-dark);
     color: white;
     font-weight: 600;
@@ -262,6 +330,7 @@
     transition: all 0.2s;
     border: none;
     cursor: pointer;
+    touch-action: manipulation;
   }
   .btn-primary:hover {
     background: #083D22;
@@ -272,8 +341,10 @@
   .btn-secondary {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     padding: 12px 24px;
+    min-height: 44px;
     background: transparent;
     color: var(--viala-ink);
     font-weight: 600;
@@ -281,6 +352,7 @@
     border-radius: 10px;
     border: 1.5px solid var(--viala-line);
     transition: all 0.2s;
+    touch-action: manipulation;
   }
   .btn-secondary:hover {
     background: var(--secondary);
@@ -291,13 +363,16 @@
   .btn-accent {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     padding: 12px 24px;
+    min-height: 44px;
     background: var(--viala-green);
     color: white;
     font-weight: 600;
     font-size: 0.9rem;
     border-radius: 10px;
+    touch-action: manipulation;
     transition: all 0.2s;
     border: none;
   }

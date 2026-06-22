@@ -5,7 +5,8 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 
 const NAV_LINKS = [
-  { label: 'Product', href: '/outcomes' },
+  { label: 'Home', href: '/' },
+  { label: 'Platform', href: '/outcomes' },
   { label: 'How It Works', href: '/how-it-works' },
   { label: 'Impact', href: '/impact' },
   { label: 'Pricing', href: '/pricing' },
@@ -32,7 +33,6 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-
       {/* ── NAVIGATION ── */}
       <header
         className="fixed top-0 inset-x-0 z-50 transition-all duration-300"
@@ -57,12 +57,12 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           </Link>
 
           {/* Center Nav — desktop only */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1" aria-label="Primary navigation">
             {NAV_LINKS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-150"
+                className="px-4 py-2.5 min-h-[44px] text-sm font-medium rounded-lg transition-colors duration-150 flex items-center"
                 style={{ color: '#404040' }}
                 onMouseEnter={e => {
                   (e.currentTarget as HTMLElement).style.color = '#0D0D0D';
@@ -79,17 +79,17 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           </nav>
 
           {/* Right Actions — desktop */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-3">
             <Link
               href="/login"
-              className="text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+              className="text-sm font-semibold px-4 py-2.5 min-h-[44px] rounded-lg transition-colors flex items-center"
               style={{ color: '#404040' }}
             >
               Sign in
             </Link>
             <Link
               href="/get-started"
-              className="text-sm font-semibold px-5 py-2.5 rounded-[10px] transition-all"
+              className="text-sm font-semibold px-5 py-2.5 min-h-[44px] rounded-[10px] transition-all flex items-center"
               style={{ background: '#059669', color: '#FFFFFF' }}
               onMouseEnter={e => {
                 (e.currentTarget as HTMLElement).style.background = '#047857';
@@ -106,13 +106,15 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             </Link>
           </div>
 
-          {/* Hamburger — mobile/tablet only */}
+          {/* Hamburger — mobile/tablet only (hidden at lg+) */}
           <button
-            className="md:hidden flex flex-col justify-center items-center w-10 h-10 rounded-xl gap-[5px] transition-colors"
+            id="mobile-menu-btn"
+            className="lg:hidden flex flex-col justify-center items-center w-11 h-11 rounded-xl gap-[5px] transition-colors"
             style={{ background: menuOpen ? '#F2F0ED' : 'transparent' }}
             onClick={() => setMenuOpen(v => !v)}
-            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
             aria-expanded={menuOpen}
+            aria-controls="mobile-menu-panel"
           >
             <span
               className="block w-5 h-[2px] rounded-full transition-all duration-300 origin-center"
@@ -141,20 +143,22 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
 
         {/* ── MOBILE MENU PANEL ── */}
         <div
-          className="md:hidden overflow-hidden transition-all duration-300 ease-in-out"
+          id="mobile-menu-panel"
+          className="lg:hidden overflow-hidden transition-all duration-300 ease-in-out"
           style={{
-            maxHeight: menuOpen ? '500px' : '0px',
+            maxHeight: menuOpen ? '520px' : '0px',
             opacity: menuOpen ? 1 : 0,
           }}
+          aria-hidden={!menuOpen}
         >
           <div className="border-t" style={{ borderColor: '#E4E0D9' }}>
-            <nav className="container-tight py-4 flex flex-col gap-1">
+            <nav className="container-tight py-4 flex flex-col gap-1" aria-label="Mobile navigation">
               {NAV_LINKS.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={closeMenu}
-                  className="px-4 py-3 text-base font-medium rounded-xl transition-colors duration-150"
+                  className="px-4 py-3 min-h-[44px] text-base font-medium rounded-xl transition-colors duration-150 flex items-center"
                   style={{ color: '#404040' }}
                   onMouseEnter={e => {
                     (e.currentTarget as HTMLElement).style.background = '#F2F0ED';
@@ -176,7 +180,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
               <Link
                 href="/login"
                 onClick={closeMenu}
-                className="px-4 py-3 text-base font-semibold rounded-xl text-center transition-colors"
+                className="px-4 py-3 min-h-[44px] text-base font-semibold rounded-xl text-center transition-colors flex items-center justify-center"
                 style={{ color: '#404040', background: '#F2F0ED' }}
               >
                 Sign in
@@ -184,7 +188,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
               <Link
                 href="/get-started"
                 onClick={closeMenu}
-                className="px-4 py-3.5 text-base font-semibold rounded-xl text-center transition-all mt-1"
+                className="px-4 py-3.5 min-h-[44px] text-base font-semibold rounded-xl text-center transition-all mt-1 flex items-center justify-center"
                 style={{ background: '#059669', color: '#FFFFFF' }}
               >
                 Book a Demo →
@@ -195,26 +199,26 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
       </header>
 
       {/* ── MAIN ── */}
-      <main className="flex-1 w-full pt-[68px]">
+      <main id="main-content" tabIndex={-1} className="flex-1 w-full pt-[68px] outline-none">
         {children}
       </main>
 
       {/* ── FOOTER ── */}
-      <footer className="relative overflow-hidden" style={{ background: '#040C0A', color: '#FFFFFF' }}>
+      <footer className="relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #040F0A 0%, #020808 100%)', color: '#FFFFFF' }}>
 
-        {/* Ambient glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[300px] pointer-events-none opacity-30 select-none"
-          style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(5,150,105,0.35) 0%, transparent 65%)', filter: 'blur(60px)' }} />
-        <div className="absolute bottom-0 right-0 w-[400px] h-[200px] pointer-events-none opacity-20"
-          style={{ background: 'radial-gradient(ellipse at 100% 100%, rgba(37,99,235,0.3) 0%, transparent 60%)' }} />
+        {/* Ambient top glow */}
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[280px] pointer-events-none opacity-40 select-none"
+          style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(5,150,105,0.28) 0%, transparent 68%)', filter: 'blur(70px)' }}
+        />
 
         {/* ── FOOTER GRID ── */}
-        <div className="relative z-10 container-tight py-12 sm:py-16">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-12">
+        <div className="relative z-10 container-wide pt-16 pb-10 sm:pt-20 sm:pb-14">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-16 xl:gap-20">
 
-            {/* Brand column */}
-            <div className="md:col-span-4">
-              <Link href="/" className="inline-flex items-center mb-5">
+            {/* ── COL 1: BRAND ── */}
+            <div className="sm:col-span-2 lg:col-span-3">
+              <Link href="/" className="inline-flex items-center mb-6">
                 <Image
                   src="/logo/viala_logo_white.png"
                   alt="VIALA"
@@ -223,136 +227,181 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
                   className="h-[38px] w-auto object-contain"
                 />
               </Link>
-              <p className="text-sm leading-relaxed mb-6 max-w-[260px]" style={{ color: '#5A8A7A' }}>
-                The intelligence platform for medicine lifecycle management. Every medicine deserves a second chance.
+
+              <p className="text-[13px] leading-[1.75] mb-5 max-w-[270px]" style={{ color: '#4A7A68' }}>
+                VIALA helps healthcare organizations recover inventory value, reduce medicine waste, and improve lifecycle visibility through intelligent recovery workflows.
               </p>
 
-              {/* Social links */}
-              <div className="flex items-center gap-3">
-                {[
-                  { label: 'LinkedIn', href: 'https://www.linkedin.com/company/viala', path: 'M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM6.5 6h-2v5h2V6zm-1-1.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm9 1.5h-2v2.5c0 .55-.45 1-1 1s-1-.45-1-1V6h-2v5h2V9.27c.35.45.9.73 1.5.73C12.88 10 13.5 9.38 13.5 8.5V6z' },
-                  { label: 'Twitter', href: 'https://twitter.com/viala_app', path: 'M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65 7.65 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z' },
-                ].map(s => (
-                  <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
-                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-all border"
-                    style={{ borderColor: '#1A3D30', background: 'rgba(255,255,255,0.03)' }}
-                    onMouseEnter={e => {
-                      (e.currentTarget as HTMLElement).style.borderColor = '#34D399';
-                      (e.currentTarget as HTMLElement).style.background = 'rgba(52,211,153,0.1)';
-                    }}
-                    onMouseLeave={e => {
-                      (e.currentTarget as HTMLElement).style.borderColor = '#1A3D30';
-                      (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)';
-                    }}
-                  >
-                    <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 fill-current" style={{ color: '#5A8A7A' }}>
-                      <path d={s.path} />
-                    </svg>
-                  </a>
-                ))}
+              {/* Contact */}
+              <div className="space-y-2 mb-6">
+                <a
+                  href="mailto:viala.health@gmail.com"
+                  className="flex items-center gap-2 text-[12px] transition-colors group"
+                  style={{ color: '#4A7A68' }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#34D399'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#4A7A68'}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+                    <rect x="2" y="4" width="20" height="16" rx="2"/>
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                  </svg>
+                  viala.health@gmail.com
+                </a>
+                <div className="flex items-center gap-2 text-[12px]" style={{ color: '#4A7A68' }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  Hyderabad, Telangana, India
+                </div>
               </div>
+
+              {/* LinkedIn only */}
+              <a
+                href="https://www.linkedin.com/company/viala"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="VIALA on LinkedIn"
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border text-[11px] font-semibold transition-all"
+                style={{ borderColor: '#1A3D30', background: 'rgba(255,255,255,0.03)', color: '#4A7A68' }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = '#34D399';
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(52,211,153,0.08)';
+                  (e.currentTarget as HTMLElement).style.color = '#34D399';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = '#1A3D30';
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)';
+                  (e.currentTarget as HTMLElement).style.color = '#4A7A68';
+                }}
+              >
+                <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current" aria-hidden="true">
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                </svg>
+                Follow on LinkedIn
+              </a>
             </div>
 
-            {/* Links */}
-            <div className="md:col-span-8 grid grid-cols-2 sm:grid-cols-3 gap-8">
+            {/* ── LINK COLUMNS ── */}
+            <div className="sm:col-span-2 lg:col-span-9 grid grid-cols-2 sm:grid-cols-3 gap-10 lg:gap-16 xl:gap-24">
               {[
                 {
                   heading: 'Platform',
                   links: [
-                    { label: 'Product', href: '/outcomes' },
+                    { label: 'Platform', href: '/outcomes' },
                     { label: 'How It Works', href: '/how-it-works' },
                     { label: 'Impact', href: '/impact' },
                     { label: 'Pricing', href: '/pricing' },
                   ],
                 },
                 {
-                  heading: 'Company',
+                  heading: 'Solutions',
                   links: [
-                    { label: 'About', href: '/about' },
-                    { label: 'Blog', href: '/blog' },
-                    { label: 'Careers', href: '/careers' },
-                    { label: 'LinkedIn', href: 'https://www.linkedin.com/company/viala' },
-                    { label: 'Contact', href: '/contact' },
+                    { label: 'Expiry Intelligence', href: '/how-it-works' },
+                    { label: 'Recovery Automation', href: '/outcomes' },
+                    { label: 'Compliance Documentation', href: '/outcomes' },
+                    { label: 'Multi-Location Visibility', href: '/impact' },
                   ],
                 },
                 {
                   heading: 'Legal & Security',
                   links: [
-                    { label: 'Documentation', href: '/documentation' },
-                    { label: 'Security', href: '/security' },
                     { label: 'Privacy Policy', href: '/privacy-policy' },
                     { label: 'Terms of Service', href: '/terms-of-service' },
-                    { label: 'Cookie Policy', href: '/cookie-policy' },
+                    { label: 'Security', href: '/security' },
+                    { label: 'Documentation', href: '/documentation' },
                   ],
                 },
               ].map((col) => (
                 <div key={col.heading}>
-                  <h5 className="text-[10px] font-black uppercase tracking-[0.12em] mb-5" style={{ color: '#2A5A48' }}>
+                  <h5
+                    className="text-[9px] font-black uppercase tracking-[0.14em] mb-5"
+                    style={{ color: '#1E5A3F', letterSpacing: '0.14em' }}
+                  >
                     {col.heading}
                   </h5>
-                  <ul className="space-y-3">
+                  <ul className="space-y-3.5">
                     {col.links.map((l) => (
                       <li key={l.label}>
-                        {l.href.startsWith('http') ? (
-                          <a
-                            href={l.href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[13px] transition-all duration-150 block"
-                            style={{ color: '#5A8A7A' }}
-                            onMouseEnter={e => {
-                              (e.currentTarget as HTMLElement).style.color = '#FFFFFF';
-                              (e.currentTarget as HTMLElement).style.paddingLeft = '4px';
-                            }}
-                            onMouseLeave={e => {
-                              (e.currentTarget as HTMLElement).style.color = '#5A8A7A';
-                              (e.currentTarget as HTMLElement).style.paddingLeft = '0';
-                            }}
-                          >
-                            {l.label}
-                          </a>
-                        ) : (
-                          <Link
-                            href={l.href}
-                            className="text-[13px] transition-all duration-150 block"
-                            style={{ color: '#5A8A7A' }}
-                            onMouseEnter={e => {
-                              (e.currentTarget as HTMLElement).style.color = '#FFFFFF';
-                              (e.currentTarget as HTMLElement).style.paddingLeft = '4px';
-                            }}
-                            onMouseLeave={e => {
-                              (e.currentTarget as HTMLElement).style.color = '#5A8A7A';
-                              (e.currentTarget as HTMLElement).style.paddingLeft = '0';
-                            }}
-                          >
-                            {l.label}
-                          </Link>
-                        )}
+                        <Link
+                          href={l.href}
+                          className="text-[13px] transition-all duration-150 block"
+                          style={{ color: '#4A7A68' }}
+                          onMouseEnter={e => {
+                            (e.currentTarget as HTMLElement).style.color = '#FFFFFF';
+                            (e.currentTarget as HTMLElement).style.paddingLeft = '5px';
+                          }}
+                          onMouseLeave={e => {
+                            (e.currentTarget as HTMLElement).style.color = '#4A7A68';
+                            (e.currentTarget as HTMLElement).style.paddingLeft = '0';
+                          }}
+                        >
+                          {l.label}
+                        </Link>
                       </li>
                     ))}
                   </ul>
                 </div>
               ))}
             </div>
+
           </div>
         </div>
 
-        {/* ── BOTTOM BAR ── */}
-        <div className="relative z-10 border-t" style={{ borderColor: '#0F2420' }}>
-          <div className="container-tight py-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-            <p className="text-[11px]" style={{ color: '#2A5A48' }}>
-              © {new Date().getFullYear()} VIALA Technologies Pvt. Ltd. · Built for Indian Healthcare.
-            </p>
-            <div className="flex items-center gap-4 sm:gap-6 flex-wrap justify-center">
+        {/* ── TRUST INDICATOR BAR ── */}
+        <div className="relative z-10 border-t" style={{ borderColor: '#0A2018' }}>
+          <div className="container-wide py-5">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-7 gap-y-3">
+              {[
+                'Audit Trail Logging',
+                'Enterprise Security',
+                'Healthcare Focused',
+                'Multi-Location Ready',
+              ].map((item) => (
+                <div key={item} className="flex items-center gap-1.5">
+                  <svg
+                    width="13" height="13" viewBox="0 0 24 24" fill="none"
+                    stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-[11px] font-semibold tracking-wide" style={{ color: '#2A5A48' }}>
+                    {item}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── COPYRIGHT BAR ── */}
+        <div className="relative z-10 border-t" style={{ borderColor: '#071410' }}>
+          <div
+            className="container-wide py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left"
+            style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}
+          >
+            <div className="space-y-0.5">
+              <p className="text-[11px]" style={{ color: '#1E4030' }}>
+                &copy; {new Date().getFullYear()} VIALA Technologies Pvt. Ltd. &middot; Built for Indian Healthcare.
+              </p>
+              <p className="text-[10px]" style={{ color: '#163328' }}>
+                Version 1.0 &nbsp;&bull;&nbsp; Healthcare Recovery Intelligence Platform
+              </p>
+            </div>
+            <div className="flex items-center gap-5 flex-wrap justify-center">
               {[
                 { label: 'Privacy', href: '/privacy-policy' },
                 { label: 'Terms', href: '/terms-of-service' },
                 { label: 'Security', href: '/security' },
               ].map(l => (
-                <Link key={l.label} href={l.href} className="text-[11px] transition-colors"
-                  style={{ color: '#2A5A48' }}
+                <Link
+                  key={l.label}
+                  href={l.href}
+                  className="text-[11px] transition-colors py-1.5 min-h-[44px] flex items-center"
+                  style={{ color: '#1E4030' }}
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#34D399'}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#2A5A48'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#1E4030'}
                 >
                   {l.label}
                 </Link>
@@ -362,6 +411,8 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         </div>
 
       </footer>
+
     </div>
   );
 }
+

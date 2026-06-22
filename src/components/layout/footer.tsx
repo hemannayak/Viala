@@ -44,7 +44,7 @@ export function Footer() {
               © {currentYear} Viala Technologies Pvt. Ltd.
             </div>
             <div className="text-xs text-muted-foreground">
-              support@viala.com | +91-40-1234-5678 | Hyderabad, India
+              viala.health@gmail.com | +91-40-1234-5678 | Hyderabad, India
             </div>
           </div>
         </div>

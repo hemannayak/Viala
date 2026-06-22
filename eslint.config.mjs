@@ -1,21 +1,25 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const require = createRequire(import.meta.url);
 
-const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
+// Import configurations
+import nextConfigCore from "eslint-config-next/core-web-vitals";
+import nextConfigTs from "eslint-config-next/typescript";
+
+const eslintConfig = [
+  // Flat config next rules
+  ...nextConfigCore,
+  ...nextConfigTs,
   // Custom rules
   {
     files: ['**/app/**/page.{js,jsx,ts,tsx}'],
     plugins: {
       'require-client-directive': {
         rules: {
-          'enforce': require(path.join(__dirname, 'eslint/plugins/require-client-directive.js'))
+          'enforce': require(path.join(__dirname, 'eslint/plugins/require-client-directive.cjs'))
         }
       }
     },
@@ -23,14 +27,16 @@ const eslintConfig = defineConfig([
       'require-client-directive/enforce': 'error'
     }
   },
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-  ]),
-]);
+  // Override default ignores
+  {
+    ignores: [
+      ".next/**",
+      "out/**",
+      "build/**",
+      "next-env.d.ts"
+    ]
+  }
+];
 
 export default eslintConfig;
+

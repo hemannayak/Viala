@@ -2,10 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import { 
-  Heart, ShieldCheck, Activity, Award, ArrowRight, 
-  Users, Building, Zap, CheckCircle2, TrendingUp, Sparkles
+  Heart, ShieldCheck, Activity, ArrowRight, Sparkles
 } from 'lucide-react';
 
 // ─── Animated counter on scroll ───────────────────────────────────────────────
@@ -14,29 +12,24 @@ function StatCounter({ value, duration = 1800 }: { value: string; duration?: num
   const ref = useRef<HTMLSpanElement>(null);
   const [started, setStarted] = useState(false);
 
-  let prefix = '', suffix = '', target = 0, decimals = 0;
-  if (value.startsWith('₹')) {
-    prefix = '₹';
-    const r = value.slice(1);
-    if (r.endsWith('M+')) {
-      suffix = 'M+';
-      target = parseFloat(r);
-      decimals = 1;
-    } else if (r.endsWith('Cr+')) {
-      suffix = ' Cr+';
-      target = parseFloat(r);
-      decimals = 1;
-    } else {
-      target = parseInt(r.replace(/,/g, ''));
+  let prefix = '';
+  let suffix = '';
+  let target = 0;
+  let decimals = 0;
+
+  const cleanVal = value.replace(/,/g, '');
+  const match = cleanVal.match(/^([^0-9.]*)([0-9.]+)(.*)$/);
+  if (match) {
+    prefix = match[1];
+    const numStr = match[2];
+    suffix = match[3];
+    target = parseFloat(numStr);
+    if (numStr.includes('.')) {
+      decimals = numStr.split('.')[1].length;
     }
-  } else if (value.endsWith('%')) {
-    suffix = '%';
-    target = parseInt(value);
-  } else if (value.endsWith('+')) {
-    suffix = '+';
-    target = parseInt(value.slice(0, -1));
   } else {
-    target = parseInt(value.replace(/,/g, ''));
+    const parsed = parseFloat(cleanVal);
+    target = isNaN(parsed) ? 0 : parsed;
   }
 
   useEffect(() => {
@@ -62,8 +55,8 @@ function StatCounter({ value, duration = 1800 }: { value: string; duration?: num
   }, [started, target, duration]);
 
   const fmt = () => {
-    if (decimals > 0) return `${prefix}${count.toFixed(decimals)}${suffix}`;
-    return `${prefix}${Math.floor(count).toLocaleString('en-IN')}${suffix}`;
+    const displayVal = decimals > 0 ? count.toFixed(decimals) : Math.floor(count).toLocaleString('en-IN');
+    return `${prefix}${displayVal}${suffix}`;
   };
   return <span ref={ref}>{fmt()}</span>;
 }
@@ -84,7 +77,7 @@ export default function AboutPage() {
               Making every single medicine matter.
             </h1>
             <p className="body-lg text-[#525252] max-w-2xl mx-auto mb-10">
-              Viala is building the intelligent lifecycle infrastructure for India's pharmaceutical ecosystem, preventing waste and ensuring life-saving drugs reach patients before it's too late.
+              Viala is building the intelligent lifecycle infrastructure for India&apos;s pharmaceutical ecosystem, preventing waste and ensuring life-saving drugs reach patients before it&apos;s too late.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Link href="/get-started" className="btn-primary flex items-center gap-2">
@@ -105,7 +98,7 @@ export default function AboutPage() {
             <div className="lg:col-span-5">
               <span className="text-[10px] font-black tracking-widest text-[#B45309] uppercase font-mono bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100">The Problem</span>
               <h2 className="text-3xl md:text-4xl font-black text-[#0F172A] mt-4 mb-6 leading-tight" style={{ fontFamily: 'var(--font-jakarta)' }}>
-                India's ₹15,000 Crore inventory blindspot.
+                India&apos;s ₹15,000 Crore inventory blindspot.
               </h2>
               <p className="text-[#4B5563] leading-relaxed mb-6">
                 Every year, billions in critical healthcare capital are written off because of near-expiry stocks, fragmented tracking, and convoluted return processes. 
@@ -177,7 +170,7 @@ export default function AboutPage() {
                 title: "Community Focused",
                 desc: "By partnering with trusted NGOs across India, we rescue eligible batch surplus and direct them to underprivileged communities."
               }
-            ].map((pillar, i) => (
+            ].map((pillar) => (
               <div key={pillar.title} className="bg-white rounded-xl border border-[#E8E5DF] p-8 shadow-sm flex flex-col items-start transition-all hover:border-[#059669]/30 hover:-translate-y-1">
                 <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-6">
                   <pillar.icon className="w-6 h-6" />
@@ -245,7 +238,7 @@ export default function AboutPage() {
                 bg: "Distributed Systems & Machine Learning",
                 desc: "Ex-senior engineer at scale. Passionate about applying AI routing trees to physical medicine distribution."
               }
-            ].map((member, i) => (
+            ].map((member) => (
               <div key={member.name} className="bg-[#F8F7F5] rounded-xl border border-[#E8E5DF] p-6 shadow-sm flex flex-col justify-between">
                 <div>
                   <div className="flex items-center gap-3 mb-4">
@@ -277,7 +270,7 @@ export default function AboutPage() {
             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full blur-2xl pointer-events-none opacity-50" />
             <Sparkles className="w-8 h-8 text-emerald-600 mx-auto mb-6" />
             <h2 className="text-2xl md:text-3xl font-black tracking-tight text-[#0F172A] mb-4" style={{ fontFamily: 'var(--font-jakarta)' }}>
-              Let's eliminate medicine expiration together.
+              Let&apos;s eliminate medicine expiration together.
             </h2>
             <p className="text-sm text-[#6B7280] leading-relaxed max-w-xl mx-auto mb-8">
               Whether you are an enterprise pharmacy chain, a stand-alone hospital network, or a registered NGO, Viala helps rescue your value and save lives.

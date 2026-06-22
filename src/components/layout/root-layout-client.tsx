@@ -21,7 +21,6 @@ const STANDALONE_PAGES = [
   '/comparison',
   '/pricing',
   '/about',
-  '/contact',
   '/careers',
   '/outcomes',
   '/get-started'
