@@ -16,11 +16,18 @@ export class ConfigValidator {
     const errors: string[] = []
     const warnings: string[] = []
     
-    // Check database configuration
-    const dbUrl = process.env.DATABASE_URL
+    // Check Supabase database configuration
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     
-    if (!dbUrl || dbUrl === 'your-production-database-url') {
-      warnings.push('DATABASE_URL not configured - using local demo database')
+    const isSupabaseConfigured = 
+      supabaseUrl && 
+      supabaseUrl !== "https://placeholder-project.supabase.co" &&
+      supabaseKey && 
+      supabaseKey !== "placeholder-key";
+      
+    if (!isSupabaseConfigured) {
+      warnings.push('Supabase URL or Anon Key is not configured - database operations will fail or fall back')
     }
     
     // Check AI configuration
@@ -62,11 +69,11 @@ export class ConfigValidator {
       }
     }
     
-    // Check email configuration
-    const smtpHost = process.env.SMTP_HOST
-    const smtpUser = process.env.SMTP_USER
-    if (!smtpHost || !smtpUser) {
-      warnings.push('Email configuration missing - notifications will be logged only')
+    // Check Gmail SMTP configuration
+    const gmailUser = process.env.GMAIL_USER
+    const gmailPass = process.env.GMAIL_PASS
+    if (!gmailUser || !gmailPass) {
+      warnings.push('Gmail SMTP email configuration is missing - notifications will be logged only')
     }
     
     // Determine mode
