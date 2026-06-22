@@ -3,7 +3,6 @@
 import { usePathname } from 'next/navigation'
 import { AppLayout } from '@/components/layout/app-layout'
 import { AuthGuard } from '@/components/auth/auth-guard'
-import { VialaChatbot } from '@/components/ui/viala-chatbot'
 import AppProviders from '@/components/providers/app-providers'
 
 // Pages that don't need the AppLayout wrapper
@@ -78,7 +77,6 @@ export function RootLayoutClient({ children }: RootLayoutClientProps) {
         // Standalone pages or pages with their own layouts render directly
         <>
           {children}
-          {pathname !== '/' && pathname !== '/login' && <VialaChatbot />}
         </>
       ) : (
         // App pages use AuthGuard and AppLayout
@@ -86,7 +84,6 @@ export function RootLayoutClient({ children }: RootLayoutClientProps) {
           <AppLayout title={pageTitle}>
             {children}
           </AppLayout>
-          <VialaChatbot />
         </AuthGuard>
       )}
     </AppProviders>

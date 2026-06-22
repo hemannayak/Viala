@@ -30,15 +30,6 @@ export class ConfigValidator {
       warnings.push('Supabase URL or Anon Key is not configured - database operations will fail or fall back')
     }
     
-    // Check AI configuration
-    const openaiKey = process.env.OPENAI_API_KEY
-    const geminiKey = process.env.GEMINI_API_KEY
-    const huggingfaceKey = process.env.HUGGINGFACE_API_KEY
-    
-    if (!openaiKey && !geminiKey && !huggingfaceKey) {
-      warnings.push('No AI API keys configured - chatbot will use fallback responses')
-    }
-    
     // Check security configuration
     // JWT_SECRET is a server-only secret and is not available in the browser bundle.
     // Validate it only on the server to avoid false production errors.
