@@ -8,10 +8,9 @@ import {
 } from "@/lib/email-templates";
 
 // Server-side Supabase client (uses env vars directly — no client bundle exposure)
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder-project.supabase.co";
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-key";
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Initialize Nodemailer transporter with Gmail SMTP
 const transporter = nodemailer.createTransport({
