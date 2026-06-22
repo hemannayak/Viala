@@ -303,6 +303,16 @@ export default function HomePage() {
   const [demoState, setDemoState] = useState<'idle' | 'running' | 'completed'>('idle');
   const [activeOutcomeIndex, setActiveOutcomeIndex] = useState(1); // Default to Return
   const [activeJourneyIndex, setActiveJourneyIndex] = useState(2); // Default to Transferred (index 2)
+  const [isJourneyHovered, setIsJourneyHovered] = useState(false);
+
+  // Auto-cycle through the lifecycle journey steps every 2 seconds when not hovered
+  useEffect(() => {
+    if (isJourneyHovered) return;
+    const timer = setInterval(() => {
+      setActiveJourneyIndex((prev) => (prev + 1) % 6);
+    }, 2000);
+    return () => clearInterval(timer);
+  }, [isJourneyHovered]);
 
   // ROI Calculator states
   const [branches, setBranches] = useState<number>(20);
@@ -875,7 +885,11 @@ export default function HomePage() {
           </div>
 
           {/* Interactive Visual Journey & Details Card */}
-          <div className="max-w-[800px] mx-auto bg-white border border-[#D9DDD5] rounded-2xl p-6 sm:p-8 shadow-sm mb-16">
+          <div 
+            className="max-w-[800px] mx-auto bg-white border border-[#D9DDD5] rounded-2xl p-6 sm:p-8 shadow-sm mb-16"
+            onMouseEnter={() => setIsJourneyHovered(true)}
+            onMouseLeave={() => setIsJourneyHovered(false)}
+          >
             {/* Visual Header */}
             <div className="text-center mb-6">
               <span className="text-[9px] font-mono font-bold text-[#5C7A68] uppercase bg-[#F7F6F3] border border-[#D9DDD5] px-2.5 py-1 rounded">
@@ -1011,7 +1025,9 @@ export default function HomePage() {
                         {/* Icon */}
                         <g transform="translate(-8, -8)" className="pointer-events-none">
                           <Icon 
-                            className="w-4 h-4 transition-colors duration-200" 
+                            width={16}
+                            height={16}
+                            className="transition-colors duration-200" 
                             style={{ color: isActive ? o.color : '#5C7A68' }}
                           />
                         </g>

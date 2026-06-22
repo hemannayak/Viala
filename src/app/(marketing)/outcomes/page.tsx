@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   TrendingUp, RotateCcw, Package, ArrowUpRight, Heart, Trash2,
@@ -193,6 +193,21 @@ const TABS = [
 
 export default function PlatformPage() {
   const [activeTab, setActiveTab] = useState('sell');
+  const [isOutcomesHovered, setIsOutcomesHovered] = useState(false);
+
+  // Auto-cycle through the lifecycle outcomes tabs every 2 seconds when not hovered
+  useEffect(() => {
+    if (isOutcomesHovered) return;
+    const timer = setInterval(() => {
+      setActiveTab((prev) => {
+        const currentIndex = TABS.findIndex((t) => t.key === prev);
+        const nextIndex = (currentIndex + 1) % TABS.length;
+        return TABS[nextIndex].key;
+      });
+    }, 2000);
+    return () => clearInterval(timer);
+  }, [isOutcomesHovered]);
+
   const current = TABS.find(t => t.key === activeTab)!;
 
   return (
@@ -228,7 +243,11 @@ export default function PlatformPage() {
 
           {/* SVG Visual (Flow: Batch -> VIALA -> 6 Outcomes) */}
           <div className="lg:col-span-5 flex justify-center">
-            <div className="w-full max-w-[450px] bg-[#F7F6F3] border border-[#D9DDD5] rounded-2xl p-6 shadow-sm">
+            <div 
+              className="w-full max-w-[450px] bg-[#F7F6F3] border border-[#D9DDD5] rounded-2xl p-6 shadow-sm"
+              onMouseEnter={() => setIsOutcomesHovered(true)}
+              onMouseLeave={() => setIsOutcomesHovered(false)}
+            >
               <svg viewBox="0 0 500 280" className="w-full h-auto overflow-visible select-none">
                 <defs>
                   <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
@@ -274,7 +293,13 @@ export default function PlatformPage() {
                     <g key={i} transform={`translate(${targetX}, 225)`}>
                       <circle r="12" fill={isActive ? TABS[i].accentLight : '#FFFFFF'} stroke={isActive ? TABS[i].accent : '#D9DDD5'} strokeWidth="1.2" />
                       {/* Mini Symbol */}
-                      <text textAnchor="middle" y="3" className="text-[8px] font-black font-mono" style={{ fill: isActive ? TABS[i].accent : '#5C7A68' }}>
+                      <text 
+                        textAnchor="middle" 
+                        y="0" 
+                        dominantBaseline="central" 
+                        className="text-[8px] font-black font-mono" 
+                        style={{ fill: isActive ? TABS[i].accent : '#5C7A68' }}
+                      >
                         {TABS[i].label[0]}
                       </text>
                       <text textAnchor="middle" y="24" className={`text-[8.5px] font-bold select-none transition-colors duration-200 ${isActive ? 'fill-[#0D2B1A] font-extrabold' : 'fill-[#5C7A68]'}`}>
